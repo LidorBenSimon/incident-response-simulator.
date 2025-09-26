@@ -1,0 +1,167 @@
+from models.scenario import Scenario, ScenarioSession, ScenarioCreate, ScenarioStatus
+from scenarios.phishing_basic import BASIC_PHISHING_SCENARIO
+from services.docker_service import DockerService
+# יבוא המודלים שלנו
+from app.models.scenario import Scenario, ScenarioSession, ScenarioCreate, ScenarioStatus
+from app.scenarios.phishing_basic import BASIC_PHISHING_SCENARIO
+
+# יצירת אפליקציית FastAPI
+app = FastAPI(
+    title="Incident Response Simulator API", 
+    description="API for managing cybersecurity incident response simulations",
+    version="1.0.0"
+)
+
+# זיכרון זמני לתרחישים (בהמשך נחליף למסד נתונים)
+scenarios_db = [BASIC_PHISHING_SCENARIO]  # התחלנו עם תרחיש אחד
+active_scenarios = {}
+
+# יצירת שירות Docker
+docker_service = DockerService()
+
+@app.get("/")
+async def root():
+    """נקודת הכניסה הראשית - בדיקה שה-API עובד"""
+    return {
+        "message": "Incident Response Simulator API",
+        "status": "running",
+        "timestamp": datetime.now().isoformat(),
+        "version": "1.0.0"
+    }
+
+@app.get("/health")
+async def health_check():
+    """בדיקת בריאות המערכת"""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "services": {
+            "api": "running",
+            "database": "not_implemented",
+            "docker": "not_checked"
+        }
+    }
+
+@app.get("/scenarios")
+async def get_scenarios():
+    """קבלת רשימת כל התרחישים"""
+    return {
+        "scenarios": scenarios_db,
+        "count": len(scenarios_db),
+        "active_scenarios": len(active_scenarios)
+    }
+
+@app.post("/scenarios")
+async def create_scenario(scenario_data: Dict[str, Any]):
+    """יצירת תרחיש חדש"""
+    # בדיקות בסיסיות
+    if not scenario_data.get("name"):
+        raise HTTPException(status_code=400, detail="Scenario name is required")
+    
+    # יצירת ID ייחודי
+    scenario_id = len(scenarios_db) + 1
+    
+    # יצירת תרחיש
+    new_scenario = {
+        "id": scenario_id,
+        "name": scenario_data["name"],
+        "description": scenario_data.get("description", ""),
+        "type": scenario_data.get("type", "basic"),
+        "created_at": datetime.now().isoformat(),
+        "status": "ready",
+        "containers": scenario_data.get("containers", [])
+    }
+    
+    scenarios_db.append(new_scenario)
+    
+    return {
+        "message": "Scenario created successfully",
+        "scenario": new_scenario
+    }
+
+@app.post("/scenarios/{scenario_id}/run")
+async def run_scenario(scenario_id: int):
+    """הרצת תרחיש"""
+    # חיפוש התרחיש
+    scenario = None
+    for s in scenarios_db:
+        if s.id == scenario_id or (s.id is None and scenario_id == 1):  # אם אין ID, זה התרחיש הראשון
+            scenario = s
+            break
+    
+    if not scenario:
+        raise HTTPException(status_code=404, detail="Scenario not found")
+    
+    # בדיקה שהתרחיש לא רץ כבר
+    if scenario_id in active_scenarios:
+        raise HTTPException(status_code=400, detail="Scenario already running")
+    
+    # יצירת session ID ייחודי
+    session_id = str(uuid.uuid4())
+    
+    # יצירת session חדש
+    session = ScenarioSession(
+        session_id=session_id,
+        scenario_id=scenario_id,
+        started_at=datetime.now(),
+        status=ScenarioStatus.RUNNING,
+        current_step=0,
+        logs=[],
+        user_actions=[],
+        alerts=[]
+    )
+    
+    active_scenarios[scenario_id] = session
+    
+    # הוספת לוג ראשוני
+    session.logs.append({
+        "timestamp": datetime.now().isoformat(),
+        "level": "INFO",
+        "message": f"Starting scenario: {scenario.name}",
+        "source": "orchestrator"
+    })
+    
+    return {
+        "message": f"Scenario '{scenario.name}' started successfully",
+        "session_id": session_id,
+        "scenario": {
+            "name": scenario.name,
+            "type": scenario.type,
+            "estimated_duration": scenario.estimated_duration,
+            "steps": len(scenario.steps)
+        },
+        "status": session.status
+    }
+
+@app.get("/scenarios/{scenario_id}/status")
+async def get_scenario_status(scenario_id: int):
+    """בדיקת סטטוס תרחיש"""
+    if scenario_id not in active_scenarios:
+        raise HTTPException(status_code=404, detail="Scenario not running")
+    
+    return active_scenarios[scenario_id]
+
+@app.post("/scenarios/{scenario_id}/stop")
+async def stop_scenario(scenario_id: int):
+    """עצירת תרחיש"""
+    if scenario_id not in active_scenarios:
+        raise HTTPException(status_code=404, detail="Scenario not running")
+    
+    # עצירת התרחיש
+    session = active_scenarios.pop(scenario_id)
+    session["stopped_at"] = datetime.now().isoformat()
+    session["status"] = "stopped"
+    
+    return {
+        "message": "Scenario stopped successfully",
+        "session": session
+    }
+
+if __name__ == "__main__":
+    # הרצת השרת
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True  # אפשר hot reload בזמן פיתוח
+    )
