@@ -201,67 +201,148 @@ const AdvancedDashboard = () => {
       // Main Content
       showSummary ? (
         // Summary View
-        React.createElement('div', { className: 'bg-white rounded-lg shadow-md p-6' },
-          React.createElement('h2', { className: 'text-xl font-semibold text-gray-800 mb-6' },
-            'Scenario Performance Summary'
+
+// Summary View - תחליף את הקיים
+        React.createElement('div', { className: 'bg-white rounded-lg shadow-lg p-8' },
+          React.createElement('h2', { className: 'text-2xl font-bold text-gray-800 mb-8 text-center' },
+            'Simulation results'
           ),
           
-          summary && React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-6' },
-            React.createElement('div', { className: 'space-y-4' },
-              React.createElement('div', { className: 'text-center p-4 bg-blue-50 rounded-lg' },
-                React.createElement('div', { className: 'text-3xl font-bold text-blue-600' },
-                  `${summary.total_score}/${summary.max_possible_score}`
-                ),
-                React.createElement('div', { className: 'text-sm text-gray-600' }, 'Total Score')
+          summary && React.createElement('div', { className: 'space-y-8' },
+            
+            // Overall Performance
+            React.createElement('div', { className: 'bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6' },
+              React.createElement('h3', { className: 'text-lg font-semibold text-gray-800 mb-4' },
+                'General performance'
               ),
-              
-              React.createElement('div', { className: 'space-y-2' },
-                React.createElement('div', { className: 'flex justify-between' },
-                  React.createElement('span', null, 'Total Events:'),
-                  React.createElement('span', { className: 'font-medium' }, summary.total_events)
+              React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-6' },
+                React.createElement('div', { className: 'text-center' },
+                  React.createElement('div', { className: 'text-4xl font-bold text-blue-600' },
+                    `${summary.overall_performance.total_score}/${summary.overall_performance.max_possible_score}`
+                  ),
+                  React.createElement('div', { className: 'text-sm text-gray-600' }, 'Total score')
                 ),
-                React.createElement('div', { className: 'flex justify-between' },
-                  React.createElement('span', null, 'Suspicious Events:'),
-                  React.createElement('span', { className: 'font-medium' }, summary.total_suspicious_events)
+                React.createElement('div', { className: 'text-center' },
+                  React.createElement('div', { className: 'text-4xl font-bold text-green-600' },
+                    `${summary.overall_performance.overall_accuracy}%`
+                  ),
+                  React.createElement('div', { className: 'text-sm text-gray-600' }, 'Overall accuracy')
                 ),
-                React.createElement('div', { className: 'flex justify-between' },
-                  React.createElement('span', null, 'Events Responded To:'),
-                  React.createElement('span', { className: 'font-medium' }, summary.events_responded_to)
+                React.createElement('div', { className: 'text-center' },
+                  React.createElement('div', { 
+                    className: `text-4xl font-bold ${
+                      summary.overall_performance.letter_grade === 'A' ? 'text-green-600' :
+                      summary.overall_performance.letter_grade === 'B' ? 'text-blue-600' :
+                      summary.overall_performance.letter_grade === 'C' ? 'text-yellow-600' :
+                      'text-red-600'
+                    }`
+                  }, summary.overall_performance.letter_grade),
+                  React.createElement('div', { className: 'text-sm text-gray-600' }, 'score')
+                )
+              )
+            ),
+
+            // Event Statistics
+            React.createElement('div', { className: 'bg-gray-50 rounded-lg p-6' },
+              React.createElement('h3', { className: 'text-lg font-semibold text-gray-800 mb-4' },
+                'Event statistics'
+              ),
+              React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4' },
+                React.createElement('div', { className: 'text-center p-3 bg-white rounded' },
+                  React.createElement('div', { className: 'text-2xl font-bold text-gray-800' },
+                    summary.event_statistics.total_events
+                  ),
+                  React.createElement('div', { className: 'text-xs text-gray-600' }, 'Total events')
                 ),
-                React.createElement('div', { className: 'flex justify-between' },
-                  React.createElement('span', null, 'Correct Identifications:'),
-                  React.createElement('span', { className: 'font-medium' }, summary.correct_suspicions)
+                React.createElement('div', { className: 'text-center p-3 bg-white rounded' },
+                  React.createElement('div', { className: 'text-2xl font-bold text-red-600' },
+                    summary.event_statistics.total_suspicious_events
+                  ),
+                  React.createElement('div', { className: 'text-xs text-gray-600' }, 'Suspicious events')
                 ),
-                React.createElement('div', { className: 'flex justify-between' },
-                  React.createElement('span', null, 'Correct Actions:'),
-                  React.createElement('span', { className: 'font-medium' }, summary.correct_actions)
+                React.createElement('div', { className: 'text-center p-3 bg-white rounded' },
+                  React.createElement('div', { className: 'text-2xl font-bold text-green-600' },
+                    summary.event_statistics.events_responded_to
+                  ),
+                  React.createElement('div', { className: 'text-xs text-gray-600' }, 'Treated')
+                ),
+                React.createElement('div', { className: 'text-center p-3 bg-white rounded' },
+                  React.createElement('div', { className: 'text-2xl font-bold text-orange-600' },
+                    summary.event_statistics.unanswered_events
+                  ),
+                  React.createElement('div', { className: 'text-xs text-gray-600' }, 'Not treated')
+                )
+              )
+            ),
+
+            // Detailed Results
+            React.createElement('div', { className: 'bg-white border border-gray-200 rounded-lg p-6' },
+              React.createElement('h3', { className: 'text-lg font-semibold text-gray-800 mb-4' },
+                'Full details of all events'
+              ),
+              React.createElement('div', { className: 'space-y-3 max-h-96 overflow-y-auto' },
+                summary.detailed_results.map((event, index) =>
+                  React.createElement('div', {
+                    key: event.event_id,
+                    className: `p-4 border rounded-lg ${
+                      event.responded ? 
+                        (event.suspicion_correct && event.action_correct ? 'border-green-300 bg-green-50' :
+                         event.suspicion_correct || event.action_correct ? 'border-yellow-300 bg-yellow-50' :
+                         'border-red-300 bg-red-50') :
+                        'border-gray-300 bg-gray-50'
+                    }`
+                  },
+                    React.createElement('div', { className: 'flex justify-between items-start' },
+                      React.createElement('div', { className: 'flex-1' },
+                        React.createElement('p', { className: 'font-medium text-sm mb-2' }, event.message),
+                        React.createElement('div', { className: 'text-xs space-y-1' },
+                          React.createElement('p', null, `✓ suspect: ${event.actual_suspicion ? 'yes' : 'no'}`),
+                          React.createElement('p', null, `✓ Correct actions: ${event.correct_action_options.join(', ')}`),
+                          React.createElement('p', { className: 'text-gray-600 italic' }, event.explanation)
+                        )
+                      ),
+                      React.createElement('div', { className: 'text-right text-xs' },
+                        event.responded ? 
+                          React.createElement('div', null,
+                            React.createElement('p', { 
+                              className: event.suspicion_correct ? 'text-green-600' : 'text-red-600'
+                            }, `זיהוי: ${event.student_marked_suspicious ? 'suspect' : 'normal'}`),
+                            React.createElement('p', { 
+                              className: event.action_correct ? 'text-green-600' : 'text-red-600'
+                            }, `פעולה: ${event.student_action}`),
+                            React.createElement('p', { className: 'font-bold' }, `${event.points_earned}/50 points`)
+                          ) :
+                          React.createElement('p', { className: 'text-orange-600 font-medium' }, 'Not treated\n0/50 points')
+                      )
+                    )
+                  )
+                )
+              )
+            ),
+
+            // Recommendations
+            React.createElement('div', { className: 'bg-blue-50 border border-blue-200 rounded-lg p-6' },
+              React.createElement('h3', { className: 'text-lg font-semibold text-blue-800 mb-4' },
+                'Recommendations for improvement'
+              ),
+              React.createElement('ul', { className: 'space-y-2' },
+                summary.recommendations.map((rec, index) =>
+                  React.createElement('li', { 
+                    key: index, 
+                    className: 'flex items-start text-sm text-blue-700'
+                  },
+                    React.createElement('span', { className: 'text-blue-500 mr-2' }, '•'),
+                    rec
+                  )
                 )
               )
             ),
             
-            React.createElement('div', { className: 'space-y-4' },
-              React.createElement('div', { className: 'p-4 bg-gray-50 rounded-lg' },
-                React.createElement('h4', { className: 'font-medium text-gray-800 mb-2' }, 'Accuracy Rates'),
-                React.createElement('div', { className: 'space-y-2' },
-                  React.createElement('div', { className: 'flex justify-between' },
-                    React.createElement('span', null, 'Threat Detection:'),
-                    React.createElement('span', { className: 'font-medium' }, 
-                      `${summary.suspicion_accuracy.toFixed(1)}%`
-                    )
-                  ),
-                  React.createElement('div', { className: 'flex justify-between' },
-                    React.createElement('span', null, 'Response Accuracy:'),
-                    React.createElement('span', { className: 'font-medium' }, 
-                      `${summary.action_accuracy.toFixed(1)}%`
-                    )
-                  )
-                )
-              ),
-              
+            React.createElement('div', { className: 'text-center' },
               React.createElement('button', {
                 onClick: () => window.location.reload(),
-                className: 'w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700'
-              }, 'Start New Scenario')
+                className: 'px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 font-medium'
+              }, 'Try a new simulation')
             )
           )
         )
@@ -269,7 +350,6 @@ const AdvancedDashboard = () => {
         // Events and Response View
         React.createElement('div', { className: 'grid grid-cols-1 lg:grid-cols-3 gap-6' },
           
-          // Events Feed
           React.createElement('div', { className: 'lg:col-span-2' },
             React.createElement('div', { className: 'bg-white rounded-lg shadow-md p-6' },
               React.createElement('div', { className: 'flex items-center justify-between mb-4' },

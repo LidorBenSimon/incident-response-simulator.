@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learning Center - IR Simulator</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState } = React;
+
+        const LearningCenter = () => {
+            const [selectedTopic, setSelectedTopic] = useState('intro');
+
+            const topics = [
+                { id: 'intro', title: 'Introduction to IR', icon: '🎯' },
+                { id: 'phishing', title: 'Phishing Attacks', icon: '🎣' },
+                { id: 'malware', title: 'Malware Detection', icon: '🦠' },
+                { id: 'lateral', title: 'Lateral Movement', icon: '🔀' },
+                { id: 'forensics', title: 'Digital Forensics', icon: '🔍' },
+                { id: 'response', title: 'Response Actions', icon: '⚡' }
+            ];
+
+            const topicContent = {
+                intro: {
+                    title: "Introduction to Incident Response",
+                    content: (
+                        <div>
+                            <h3 className="text-2xl font-bold mb-4">What is Incident Response?</h3>
+                            <p className="mb-4">Incident Response (IR) is a structured approach to addressing and managing the aftermath of a security breach or cyberattack.</p>
+                            
+                            <h4 className="text-xl font-semibold mt-6 mb-3">The IR Lifecycle</h4>
+                            <ol className="list-decimal list-inside space-y-2 mb-4">
+                                <li><strong>Preparation:</strong> Develop policies, train teams, deploy tools</li>
+                                <li><strong>Detection & Analysis:</strong> Identify and investigate incidents</li>
+                                <li><strong>Containment:</strong> Prevent incident from spreading</li>
+                                <li><strong>Eradication:</strong> Remove the threat</li>
+                                <li><strong>Recovery:</strong> Restore normal operations</li>
+                                <li><strong>Lessons Learned:</strong> Review and improve</li>
+                            </ol>
+
+                            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mt-6">
+                                <p className="font-semibold">Key Takeaway:</p>
+                                <p>Effective IR requires preparation, quick detection, decisive action, and continuous improvement.</p>
+                            </div>
+                        </div>
+                    ),
+                    resources: [
+                        { title: "NIST IR Guide", url: "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-61r2.pdf" },
+                        { title: "SANS IR Process", url: "https://www.sans.org/white-papers/33901/" }
+                    ]
+                },
+                phishing: {
+                    title: "Phishing Attacks",
+                    content: (
+                        <div>
+                            <h3 className="text-2xl font-bold mb-4">Understanding Phishing</h3>
+                            <p className="mb-4">Phishing is a social engineering attack where attackers trick victims into revealing sensitive information.</p>
+                            
+                            <h4 className="text-xl font-semibold mt-6 mb-3">Red Flags</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div className="bg-red-50 p-4 rounded-lg">
+                                    <p className="font-semibold text-red-800">⚠️ Suspicious Sender</p>
+                                    <p className="text-sm">Check emails for misspellings</p>
+                                </div>
+                                <div className="bg-red-50 p-4 rounded-lg">
+                                    <p className="font-semibold text-red-800">⚠️ Urgent Language</p>
+                                    <p className="text-sm">"Act now!" creates false urgency</p>
+                                </div>
+                                <div className="bg-red-50 p-4 rounded-lg">
+                                    <p className="font-semibold text-red-800">⚠️ Suspicious Links</p>
+                                    <p className="text-sm">Hover to see real destination</p>
+                                </div>
+                                <div className="bg-red-50 p-4 rounded-lg">
+                                    <p className="font-semibold text-red-800">⚠️ Attachments</p>
+                                    <p className="text-sm">Unexpected .exe, .zip files</p>
+                                </div>
+                            </div>
+
+                            <h4 className="text-xl font-semibold mt-6 mb-3">Response Actions</h4>
+                            <ol className="list-decimal list-inside space-y-2">
+                                <li>Don't click links or open attachments</li>
+                                <li>Report to security team</li>
+                                <li>Delete the email</li>
+                                <li>Change passwords if compromised</li>
+                            </ol>
+                        </div>
+                    ),
+                    resources: [
+                        { title: "Anti-Phishing Working Group", url: "https://apwg.org/" },
+                        { title: "Google Phishing Quiz", url: "https://phishingquiz.withgoogle.com/" }
+                    ]
+                },
+                malware: {
+                    title: "Malware Detection",
+                    content: (
+                        <div>
+                            <h3 className="text-2xl font-bold mb-4">Malware Types and Detection</h3>
+                            
+                            <div className="space-y-4 mb-6">
+                                <div className="border-l-4 border-purple-500 pl-4">
+                                    <p className="font-bold">Virus</p>
+                                    <p className="text-sm text-gray-600">Attaches to files and spreads</p>
+                                </div>
+                                <div className="border-l-4 border-red-500 pl-4">
+                                    <p className="font-bold">Ransomware</p>
+                                    <p className="text-sm text-gray-600">Encrypts files, demands payment</p>
+                                </div>
+                                <div className="border-l-4 border-orange-500 pl-4">
+                                    <p className="font-bold">Trojan</p>
+                                    <p className="text-sm text-gray-600">Disguises as legitimate software</p>
+                                </div>
+                                <div className="border-l-4 border-yellow-500 pl-4">
+                                    <p className="font-bold">Spyware</p>
+                                    <p className="text-sm text-gray-600">Monitors user activity</p>
+                                </div>
+                            </div>
+
+                            <h4 className="text-xl font-semibold mt-6 mb-3">Detection Signs</h4>
+                            <ul className="list-disc list-inside space-y-2">
+                                <li>Unusual CPU or network activity</li>
+                                <li>Unexpected system crashes</li>
+                                <li>Unknown processes running</li>
+                                <li>Antivirus alerts</li>
+                            </ul>
+                        </div>
+                    ),
+                    resources: [
+                        { title: "Malwarebytes Blog", url: "https://www.malwarebytes.com/blog" },
+                        { title: "VirusTotal Scanner", url: "https://www.virustotal.com/" }
+                    ]
+                },
+                lateral: {
+                    title: "Lateral Movement",
+                    content: (
+                        <div>
+                            <h3 className="text-2xl font-bold mb-4">Lateral Movement in Networks</h3>
+                            <p className="mb-4">Techniques attackers use to move through networks after initial compromise.</p>
+                            
+                            <h4 className="text-xl font-semibold mt-6 mb-3">Common Techniques</h4>
+                            <div className="space-y-3 mb-6">
+                                <div className="bg-gray-50 p-4 rounded">
+                                    <p className="font-bold">Pass-the-Hash</p>
+                                    <p className="text-sm">Using captured hashes to authenticate</p>
+                                </div>
+                                <div className="bg-gray-50 p-4 rounded">
+                                    <p className="font-bold">RDP Hijacking</p>
+                                    <p className="text-sm">Taking over Remote Desktop sessions</p>
+                                </div>
+                            </div>
+
+                            <h4 className="text-xl font-semibold mt-6 mb-3">Detection Signs</h4>
+                            <ul className="list-disc list-inside space-y-2">
+                                <li>Unusual login patterns</li>
+                                <li>Accounts accessing unusual systems</li>
+                                <li>Excessive failed authentications</li>
+                            </ul>
+                        </div>
+                    ),
+                    resources: [
+                        { title: "MITRE ATT&CK", url: "https://attack.mitre.org/tactics/TA0008/" }
+                    ]
+                },
+                forensics: {
+                    title: "Digital Forensics",
+                    content: (
+                        <div>
+                            <h3 className="text-2xl font-bold mb-4">Digital Forensics Basics</h3>
+                            
+                            <div className="space-y-3 mb-6">
+                                <div className="flex items-start">
+                                    <div className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mr-3">1</div>
+                                    <div>
+                                        <p className="font-bold">Identification</p>
+                                        <p className="text-sm text-gray-600">Determine what evidence exists</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-start">
+                                    <div className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mr-3">2</div>
+                                    <div>
+                                        <p className="font-bold">Preservation</p>
+                                        <p className="text-sm text-gray-600">Create forensic copies</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-start">
+                                    <div className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mr-3">3</div>
+                                    <div>
+                                        <p className="font-bold">Analysis</p>
+                                        <p className="text-sm text-gray-600">Examine and interpret data</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h4 className="text-xl font-semibold mt-6 mb-3">Key Tools</h4>
+                            <ul className="list-disc list-inside space-y-2">
+                                <li>Volatility (memory analysis)</li>
+                                <li>Autopsy (disk analysis)</li>
+                                <li>Wireshark (network analysis)</li>
+                            </ul>
+                        </div>
+                    ),
+                    resources: [
+                        { title: "SANS Digital Forensics", url: "https://www.sans.org/cyber-security-courses/advanced-incident-response/" }
+                    ]
+                },
+                response: {
+                    title: "Response Actions",
+                    content: (
+                        <div>
+                            <h3 className="text-2xl font-bold mb-4">Incident Response Actions</h3>
+                            
+                            <div className="space-y-4">
+                                <div className="bg-green-50 p-4 rounded-lg">
+                                    <p className="font-bold text-green-800">Monitor</p>
+                                    <p className="text-sm">For low-risk events. Increase logging and watch for escalation.</p>
+                                </div>
+                                <div className="bg-yellow-50 p-4 rounded-lg">
+                                    <p className="font-bold text-yellow-800">Isolate</p>
+                                    <p className="text-sm">For suspicious activity. Disconnect system from network.</p>
+                                </div>
+                                <div className="bg-orange-50 p-4 rounded-lg">
+                                    <p className="font-bold text-orange-800">Block IP/Domain</p>
+                                    <p className="text-sm">Add malicious sources to firewall blocklist.</p>
+                                </div>
+                                <div className="bg-red-50 p-4 rounded-lg">
+                                    <p className="font-bold text-red-800">Escalate</p>
+                                    <p className="text-sm">For critical threats. Alert senior security team immediately.</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mt-6">
+                                <p className="font-semibold">Remember:</p>
+                                <p>Match response severity to threat level. Over-response wastes resources, under-response allows damage.</p>
+                            </div>
+                        </div>
+                    ),
+                    resources: []
+                }
+            };
+
+            const currentTopic = topicContent[selectedTopic];
+
+            return React.createElement('div', { className: 'min-h-screen bg-gradient-to-br from-gray-50 to-blue-50' },
+                // Navigation
+                React.createElement('nav', { className: 'bg-white shadow-sm' },
+                    React.createElement('div', { className: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8' },
+                        React.createElement('div', { className: 'flex justify-between items-center h-16' },
+                            React.createElement('a', { 
+                                href: 'index_new.html',
+                                className: 'text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent'
+                            }, 'IR Simulator'),
+                            React.createElement('a', {
+                                href: 'simulator.html',
+                                className: 'px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg hover:from-purple-600 hover:to-pink-700 transition'
+                            }, 'Launch Simulator')
+                        )
+                    )
+                ),
+
+                // Main Content
+                React.createElement('div', { className: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8' },
+                    React.createElement('div', { className: 'text-center mb-12' },
+                        React.createElement('h1', { className: 'text-4xl font-bold text-gray-900 mb-4' },
+                            'Learning Center'
+                        ),
+                        React.createElement('p', { className: 'text-xl text-gray-600' },
+                            'Master cybersecurity concepts before starting simulations'
+                        )
+                    ),
+
+                    React.createElement('div', { className: 'grid md:grid-cols-4 gap-6' },
+                        // Sidebar
+                        React.createElement('div', { className: 'md:col-span-1' },
+                            React.createElement('div', { className: 'bg-white rounded-xl shadow-lg p-4 sticky top-4' },
+                                React.createElement('h3', { className: 'font-semibold text-gray-900 mb-4' }, 'Topics'),
+                                React.createElement('div', { className: 'space-y-2' },
+                                    topics.map(topic =>
+                                        React.createElement('button', {
+                                            key: topic.id,
+                                            onClick: () => setSelectedTopic(topic.id),
+                                            className: `w-full text-left px-4 py-3 rounded-lg transition ${
+                                                selectedTopic === topic.id 
+                                                    ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white' 
+                                                    : 'hover:bg-gray-100'
+                                            }`
+                                        },
+                                            React.createElement('span', { className: 'mr-2' }, topic.icon),
+                                            topic.title
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+
+                        // Content Area
+                        React.createElement('div', { className: 'md:col-span-3' },
+                            React.createElement('div', { className: 'bg-white rounded-xl shadow-lg p-8 mb-6' },
+                                currentTopic.content
+                            ),
+
+                            // Resources
+                            currentTopic.resources.length > 0 && React.createElement('div', { className: 'bg-white rounded-xl shadow-lg p-6' },
+                                React.createElement('h4', { className: 'text-lg font-semibold mb-4' }, 'Additional Resources'),
+                                React.createElement('div', { className: 'space-y-2' },
+                                    currentTopic.resources.map((resource, idx) =>
+                                        React.createElement('a', {
+                                            key: idx,
+                                            href: resource.url,
+                                            target: '_blank',
+                                            rel: 'noopener noreferrer',
+                                            className: 'block p-3 border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition'
+                                        },
+                                            React.createElement('span', { className: 'text-purple-600 hover:underline' }, 
+                                                '→ ', resource.title
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            );
+        };
+
+        ReactDOM.render(React.createElement(LearningCenter), document.getElementById('root'));
+    </script>
+</body>
+</html>

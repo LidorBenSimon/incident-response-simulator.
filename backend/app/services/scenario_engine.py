@@ -21,9 +21,9 @@ class ScenarioEngine:
         self.event_pools = self._create_event_pools()
     
     def _create_event_pools(self) -> Dict[str, List[ScenarioEvent]]:
-        """יצירת בריכות אירועים מעורבים"""
+        """Create event pools (normal + suspicious)"""
         
-        # אירועים רגילים
+        # Normal events
         normal_events = [
             ScenarioEvent("norm_001", datetime.now(), "normal", "INFO", 
                          "User alice.smith logged into workstation WS-MARKETING-01", "Active Directory"),
@@ -47,7 +47,7 @@ class ScenarioEngine:
                          "Firewall rule updated: Allow port 443", "Network Security"),
         ]
         
-        # אירועים חשודים
+        # Suspicious events
         suspicious_events = [
             ScenarioEvent("susp_001", datetime.now(), "attack", "WARNING",
                          "Suspicious email attachment opened on WS-MARKETING-01", "Email Gateway", True),
@@ -73,9 +73,9 @@ class ScenarioEngine:
         }
     
     async def start_scenario(self, session_id: str, scenario_id: str) -> Dict[str, Any]:
-        """התחלת תרחיש מורכב"""
+        """Start a complex scenario"""
         
-        # יצירת רצף מעורב של אירועים
+        # Create a mixed sequence of events
         mixed_events = self._create_mixed_sequence()
         
         session = {
@@ -92,7 +92,7 @@ class ScenarioEngine:
         
         self.active_sessions[session_id] = session
         
-        # התחלת שליחת אירועים הדרגתית
+        # Start gradual event delivery
         asyncio.create_task(self._deliver_events_gradually(session_id))
         
         return {
@@ -104,34 +104,34 @@ class ScenarioEngine:
         }
     
     def _create_mixed_sequence(self) -> List[ScenarioEvent]:
-        """יצירת רצף מעורב ואקראי של אירועים"""
+        """Create a random mixed sequence of events"""
         normal_pool = self.event_pools["normal"].copy()
         suspicious_pool = self.event_pools["suspicious"].copy()
         
-        # עירבוב האירועים
+        # Shuffle events
         random.shuffle(normal_pool)
         random.shuffle(suspicious_pool)
         
-        # יצירת רצף מעורב: בערך 60% רגילים, 40% חשודים
+        # Create a sequence: ~60% normal, ~40% suspicious
         sequence = []
         normal_idx = 0
         suspicious_idx = 0
         
-        for i in range(16):  # סה"כ 16 אירועים
+        for i in range(16):  # Total 16 events
             if random.random() < 0.6 and normal_idx < len(normal_pool):
-                # אירוע רגיל
+                # Normal event
                 event = normal_pool[normal_idx]
                 event.event_id = f"evt_{i+1:03d}"
                 sequence.append(event)
                 normal_idx += 1
             elif suspicious_idx < len(suspicious_pool):
-                # אירוע חשוד
+                # Suspicious event
                 event = suspicious_pool[suspicious_idx]
                 event.event_id = f"evt_{i+1:03d}"
                 sequence.append(event)
                 suspicious_idx += 1
             else:
-                # אם נגמרו החשודים, הוסף רגיל
+                # If suspicious pool is empty, add normal
                 if normal_idx < len(normal_pool):
                     event = normal_pool[normal_idx]
                     event.event_id = f"evt_{i+1:03d}"
@@ -141,7 +141,7 @@ class ScenarioEngine:
         return sequence
     
     async def _deliver_events_gradually(self, session_id: str):
-        """שליחת אירועים בהדרגה - אחד כל 3-7 שניות"""
+        """Deliver events gradually - one every 3-7 seconds"""
         if session_id not in self.active_sessions:
             return
         
@@ -150,11 +150,11 @@ class ScenarioEngine:
         while (session_id in self.active_sessions and 
                session["next_event_index"] < len(session["event_sequence"])):
             
-            # המתנה אקראית בין 3-7 שניות
+            # Wait randomly between 3-7 seconds
             delay = random.uniform(3, 7)
             await asyncio.sleep(delay)
             
-            # בדיקה שהsession עדיין פעיל
+            # Check session is still active
             if session_id not in self.active_sessions:
                 return
             
@@ -163,14 +163,14 @@ class ScenarioEngine:
             
             if event_idx < len(session["event_sequence"]):
                 event = session["event_sequence"][event_idx]
-                event.timestamp = datetime.now()  # עדכון זמן אמיתי
+                event.timestamp = datetime.now()  # Update real time
                 
                 session["events_delivered"].append(event)
                 session["next_event_index"] += 1
                 session["last_event_time"] = datetime.now()
     
     def get_session_events(self, session_id: str) -> List[Dict[str, Any]]:
-        """קבלת כל האירועים שנשלחו עד כה"""
+        """Get all events delivered so far"""
         if session_id not in self.active_sessions:
             return []
         
@@ -184,7 +184,7 @@ class ScenarioEngine:
                 "level": event.level,
                 "message": event.message,
                 "source": event.source,
-                "is_suspicious": event.is_suspicious,  # זה לא יוצג לmשתמש
+                "is_suspicious": event.is_suspicious,
                 "event_type": event.event_type
             })
         
@@ -192,13 +192,13 @@ class ScenarioEngine:
     
     def submit_student_response(self, session_id: str, event_id: str, 
                                action: str, is_suspicious_marked: bool) -> Dict[str, Any]:
-        """קבלת תגובת התלמיד לאירוע ספציפי"""
+        """Receive student's response to a specific event"""
         if session_id not in self.active_sessions:
             return {"status": "error", "message": "Session not found"}
         
         session = self.active_sessions[session_id]
         
-        # חיפוש האירוע
+        # Find the event
         event = None
         for e in session["events_delivered"]:
             if e.event_id == event_id:
@@ -208,7 +208,7 @@ class ScenarioEngine:
         if not event:
             return {"status": "error", "message": "Event not found"}
         
-        # הערכת התגובה
+        # Evaluate response
         correct_suspicion = event.is_suspicious == is_suspicious_marked
         correct_action = self._evaluate_action(event, action)
         
@@ -231,77 +231,215 @@ class ScenarioEngine:
         }
     
     def _evaluate_action(self, event: ScenarioEvent, action: str) -> bool:
-        """הערכת נכונות הפעולה"""
+        """Evaluate correctness of the action"""
         if event.is_suspicious:
-            # פעולות נכונות לאירועים חשודים
+            # Correct actions for suspicious events
             if event.level == "CRITICAL":
                 return action in ["isolate", "escalate", "shutdown"]
             else:  # WARNING
                 return action in ["monitor", "isolate", "block_ip"]
         else:
-            # פעולות נכונות לאירועים רגילים
+            # Correct actions for normal events
             return action in ["monitor"]
     
     def _generate_feedback(self, event: ScenarioEvent, response: Dict[str, Any]) -> Dict[str, Any]:
-        """יצירת משוב מפורט"""
+        """Generate detailed feedback"""
         feedback = {
             "suspicion_feedback": "",
             "action_feedback": "",
             "recommendations": []
         }
         
-        # משוב על זיהוי החשדנות
+        # Feedback on suspicion detection
         if response["correct_suspicion"]:
             if event.is_suspicious:
-                feedback["suspicion_feedback"] = "זיהוי מעולה! זה אכן אירוע חשוד."
+                feedback["suspicion_feedback"] = "Great detection! This is indeed a suspicious event."
             else:
-                feedback["suspicion_feedback"] = "נכון - זה אירוע רגיל."
+                feedback["suspicion_feedback"] = "Correct - this is a normal event."
         else:
             if event.is_suspicious:
-                feedback["suspicion_feedback"] = "פספסת איום! זה היה אירוע חשוד."
-                feedback["recommendations"].append("שים לב למילים כמו 'suspicious', 'unusual', 'multiple failed attempts'")
+                feedback["suspicion_feedback"] = "You missed a threat! This was a suspicious event."
+                feedback["recommendations"].append("Pay attention to words like 'suspicious', 'unusual', 'multiple failed attempts'")
             else:
-                feedback["suspicion_feedback"] = "זה היה אירוע רגיל, לא חשוד."
-                feedback["recommendations"].append("פעילות כמו backup, updates, login/logout רגילים הם לא חשודים")
+                feedback["suspicion_feedback"] = "This was a normal event, not suspicious."
+                feedback["recommendations"].append("Activities like backup, updates, regular login/logout are not suspicious")
         
-        # משוב על הפעולה
+        # Feedback on action
         if response["correct_action"]:
-            feedback["action_feedback"] = "בחירת פעולה נכונה!"
+            feedback["action_feedback"] = "Correct action choice!"
         else:
             if event.is_suspicious and event.level == "CRITICAL":
-                feedback["action_feedback"] = "אירוע קריטי דורש פעולה חזקה יותר (isolate/escalate/shutdown)"
+                feedback["action_feedback"] = "Critical events require stronger actions (isolate/escalate/shutdown)"
             elif event.is_suspicious:
-                feedback["action_feedback"] = "אירוע חשוד דורש תגובה (monitor/isolate/block_ip)"
+                feedback["action_feedback"] = "Suspicious events require a response (monitor/isolate/block_ip)"
             else:
-                feedback["action_feedback"] = "לאירוע רגיל מספיק ניטור"
+                feedback["action_feedback"] = "For a normal event, monitoring is sufficient"
         
         return feedback
     
     def get_session_summary(self, session_id: str) -> Dict[str, Any]:
-        """סיכום ביצועי התלמיד"""
+        """Summarize student's performance with score across all events"""
         if session_id not in self.active_sessions:
             return {"status": "error", "message": "Session not found"}
         
         session = self.active_sessions[session_id]
         responses = session["student_responses"]
-        total_events = len(session["events_delivered"])
-        suspicious_events = len([e for e in session["events_delivered"] if e.is_suspicious])
         
+        # All events delivered
+        total_events = len(session["events_delivered"])
+        suspicious_events = [e for e in session["events_delivered"] if e.is_suspicious]
+        normal_events = [e for e in session["events_delivered"] if not e.is_suspicious]
+        
+        # Responses
         total_responses = len(responses)
         correct_suspicions = len([r for r in responses if r["correct_suspicion"]])
         correct_actions = len([r for r in responses if r["correct_action"]])
         total_score = sum([r["score"] for r in responses])
         
+        # Max score
+        max_possible_score = total_events * 50  # each event worth 50 points
+        unanswered_events = total_events - total_responses
+        
+        # Detailed breakdown
+        all_events_details = []
+        for event in session["events_delivered"]:
+            # Find response for this event
+            response = None
+            for r in responses:
+                if r["event_id"] == event.event_id:
+                    response = r
+                    break
+            
+            event_detail = {
+                "event_id": event.event_id,
+                "message": event.message,
+                "actual_suspicion": event.is_suspicious,
+                "correct_action_options": self._get_correct_actions_for_event(event),
+                "explanation": self._get_event_explanation(event)
+            }
+            
+            if response:
+                event_detail.update({
+                    "responded": True,
+                    "student_marked_suspicious": response["is_suspicious_marked"],
+                    "student_action": response["action"],
+                    "suspicion_correct": response["correct_suspicion"],
+                    "action_correct": response["correct_action"],
+                    "points_earned": response["score"]
+                })
+            else:
+                event_detail.update({
+                    "responded": False,
+                    "student_marked_suspicious": None,
+                    "student_action": None,
+                    "suspicion_correct": False,
+                    "action_correct": False,
+                    "points_earned": 0
+                })
+            
+            all_events_details.append(event_detail)
+        
+        # Calculate percentages
+        if total_events > 0:
+            overall_accuracy = (total_score / max_possible_score) * 100
+            response_rate = (total_responses / total_events) * 100
+        else:
+            overall_accuracy = 0
+            response_rate = 0
+            
+        suspicion_accuracy = (correct_suspicions / total_responses) * 100 if total_responses > 0 else 0
+        action_accuracy = (correct_actions / total_responses) * 100 if total_responses > 0 else 0
+        
         return {
             "session_id": session_id,
             "scenario_name": "Advanced Multi-Stage Attack",
-            "total_events": total_events,
-            "total_suspicious_events": suspicious_events,
-            "events_responded_to": total_responses,
-            "correct_suspicions": correct_suspicions,
-            "correct_actions": correct_actions,
-            "total_score": total_score,
-            "max_possible_score": total_responses * 50,
-            "suspicion_accuracy": (correct_suspicions / total_responses) * 100 if total_responses > 0 else 0,
-            "action_accuracy": (correct_actions / total_responses) * 100 if total_responses > 0 else 0
+            "overall_performance": {
+                "total_score": total_score,
+                "max_possible_score": max_possible_score,
+                "overall_accuracy": round(overall_accuracy, 1),
+                "letter_grade": self._calculate_letter_grade(overall_accuracy)
+            },
+            "event_statistics": {
+                "total_events": total_events,
+                "total_suspicious_events": len(suspicious_events),
+                "total_normal_events": len(normal_events),
+                "events_responded_to": total_responses,
+                "unanswered_events": unanswered_events,
+                "response_rate": round(response_rate, 1)
+            },
+            "accuracy_breakdown": {
+                "correct_suspicions": correct_suspicions,
+                "correct_actions": correct_actions,
+                "suspicion_accuracy": round(suspicion_accuracy, 1),
+                "action_accuracy": round(action_accuracy, 1)
+            },
+            "detailed_results": all_events_details,
+            "recommendations": self._generate_recommendations(overall_accuracy, response_rate, suspicion_accuracy, action_accuracy)
         }
+    
+    def _get_correct_actions_for_event(self, event) -> List[str]:
+        """Return correct actions for the event"""
+        if event.is_suspicious:
+            if event.level == "CRITICAL":
+                return ["isolate", "escalate", "shutdown"]
+            else:  # WARNING
+                return ["monitor", "isolate", "block_ip"]
+        else:
+            return ["monitor"]
+    
+    def _get_event_explanation(self, event) -> str:
+        """Explain why the event is suspicious or not"""
+        if event.is_suspicious:
+            explanations = {
+                "Suspicious email attachment opened": "Opening a suspicious attachment may lead to malware installation",
+                "Outbound connection to suspicious domain": "Connection to a suspicious domain may indicate malware activity or data exfiltration",
+                "Unusual PowerShell execution": "Unusual PowerShell usage is a strong indicator of malicious activity",
+                "Multiple failed login attempts": "Multiple failed logins may indicate a brute force attack",
+                "Lateral movement detected": "Lateral movement indicates attacker spreading post-initial compromise",
+                "Large data transfer": "Large outbound data transfer may indicate data theft",
+                "Encrypted files detected": "File encryption is a typical ransomware sign",
+                "Ransom note file created": "Creation of ransom note confirms ransomware attack"
+            }
+            
+            for key, explanation in explanations.items():
+                if key.lower() in event.message.lower():
+                    return explanation
+            return "This activity shows suspicious behavior patterns typical of cyberattacks"
+        else:
+            return "This is normal routine activity in the system and not suspicious"
+    
+    def _calculate_letter_grade(self, accuracy: float) -> str:
+        """Calculate letter grade"""
+        if accuracy >= 90:
+            return "A"
+        elif accuracy >= 80:
+            return "B"
+        elif accuracy >= 70:
+            return "C"
+        elif accuracy >= 60:
+            return "D"
+        else:
+            return "F"
+    
+    def _generate_recommendations(self, overall_acc: float, response_rate: float, 
+                                suspicion_acc: float, action_acc: float) -> List[str]:
+        """Generate personalized recommendations"""
+        recommendations = []
+        
+        if response_rate < 70:
+            recommendations.append("Try to identify and respond to more events - unanswered events may escalate issues")
+        
+        if suspicion_acc < 70:
+            recommendations.append("Focus on learning indicators of suspicious activity like unknown domains and unusual command executions")
+        
+        if action_acc < 70:
+            recommendations.append("Learn the appropriate responses for each severity level - critical events require stronger actions")
+        
+        if overall_acc >= 90:
+            recommendations.append("Excellent performance! Try more advanced scenarios")
+        elif overall_acc >= 70:
+            recommendations.append("Good performance. Continue practicing similar scenarios to strengthen skills")
+        else:
+            recommendations.append("Recommended to review study material and practice more basic scenarios")
+        
+        return recommendations
