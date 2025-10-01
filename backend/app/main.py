@@ -6,49 +6,55 @@ from datetime import datetime
 import json
 import uuid
 
-# יבוא המודלים שלנו - עם relative imports
+# Import existing models and services
 from models.scenario import Scenario, ScenarioSession, ScenarioCreate, ScenarioStatus
 from scenarios.phishing_basic import BASIC_PHISHING_SCENARIO
 from services.docker_service import DockerService
 from services.scenario_engine import ScenarioEngine
 
-# יצירת אפליקציית FastAPI
+# Import new quiz models and data
+from models.quiz_model import QuizSubmission, QuizSummary, QuizResult
+from data.quiz_questions import get_all_quiz_questions, get_question_by_id
+
+# Create FastAPI app
 app = FastAPI(
     title="Incident Response Simulator API", 
-    description="API for managing cybersecurity incident response simulations",
-    version="1.0.0"
+    description="API for managing cybersecurity incident response simulations and quizzes",
+    version="2.0.0"
 )
 
-# הוספת CORS middleware
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Frontend URL
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:5500", "*"],  # Add your frontend URLs
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# זיכרון זמני לתרחישים (בהמשך נחליף למסד נתונים)
-scenarios_db = [BASIC_PHISHING_SCENARIO]  # התחלנו עם תרחיש אחד
+# Temporary storage (later replace with database)
+scenarios_db = [BASIC_PHISHING_SCENARIO]
 active_scenarios = {}
+quiz_sessions = {}  # Store quiz session data
 
-# יצירת שירות Docker ומנגנון התרחישים
+# Services
 docker_service = DockerService()
 scenario_engine = ScenarioEngine()
 
 @app.get("/")
 async def root():
-    """נקודת הכניסה הראשית - בדיקה שה-API עובד"""
+    """Root endpoint - API health check"""
     return {
         "message": "Incident Response Simulator API",
         "status": "running",
         "timestamp": datetime.now().isoformat(),
-        "version": "1.0.0"
+        "version": "2.0.0",
+        "features": ["simulations", "quizzes", "learning"]
     }
 
 @app.get("/health")
 async def health_check():
-    """בדיקת בריאות המערכת"""
+    """System health check"""
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
@@ -59,9 +65,11 @@ async def health_check():
         }
     }
 
+# ===== EXISTING SCENARIO ENDPOINTS =====
+
 @app.get("/scenarios")
 async def get_scenarios():
-    """קבלת רשימת כל התרחישים"""
+    """Get all available scenarios"""
     scenarios_list = []
     for i, scenario in enumerate(scenarios_db, 1):
         scenarios_list.append({
@@ -80,49 +88,19 @@ async def get_scenarios():
         "active_scenarios": len(active_scenarios)
     }
 
-@app.post("/scenarios")
-async def create_scenario(scenario_data: Dict[str, Any]):
-    """יצירת תרחיש חדש"""
-    # בדיקות בסיסיות
-    if not scenario_data.get("name"):
-        raise HTTPException(status_code=400, detail="Scenario name is required")
-    
-    # יצירת ID ייחודי
-    scenario_id = len(scenarios_db) + 1
-    
-    # יצירת תרחיש
-    new_scenario = {
-        "id": scenario_id,
-        "name": scenario_data["name"],
-        "description": scenario_data.get("description", ""),
-        "type": scenario_data.get("type", "basic"),
-        "created_at": datetime.now().isoformat(),
-        "status": "ready",
-        "containers": scenario_data.get("containers", [])
-    }
-    
-    return {
-        "message": "Scenario created successfully",
-        "scenario": new_scenario
-    }
-
 @app.post("/scenarios/{scenario_id}/run")
 async def run_scenario(scenario_id: int):
-    """הרצת תרחיש"""
-    # חיפוש התרחיש
+    """Start a scenario simulation"""
     if scenario_id < 1 or scenario_id > len(scenarios_db):
         raise HTTPException(status_code=404, detail="Scenario not found")
     
-    scenario = scenarios_db[scenario_id - 1]  # רשימה מתחילה מ-0
+    scenario = scenarios_db[scenario_id - 1]
     
-    # בדיקה שהתרחיש לא רץ כבר
     if scenario_id in active_scenarios:
         raise HTTPException(status_code=400, detail="Scenario already running")
     
-    # יצירת session ID ייחודי
     session_id = str(uuid.uuid4())
     
-    # יצירת session חדש
     session = ScenarioSession(
         session_id=session_id,
         scenario_id=scenario_id,
@@ -136,10 +114,8 @@ async def run_scenario(scenario_id: int):
     
     active_scenarios[scenario_id] = session
     
-    # הפעלת containers אמיתיים
     docker_result = docker_service.start_scenario_containers(scenario_id)
     
-    # הוספת לוג ראשוני
     session.logs.append({
         "timestamp": datetime.now().isoformat(),
         "level": "INFO",
@@ -147,7 +123,6 @@ async def run_scenario(scenario_id: int):
         "source": "orchestrator"
     })
     
-    # הוספת לוג של הפעלת containers
     session.logs.append({
         "timestamp": datetime.now().isoformat(),
         "level": "INFO" if docker_result["status"] == "success" else "ERROR",
@@ -171,7 +146,7 @@ async def run_scenario(scenario_id: int):
 
 @app.get("/scenarios/{scenario_id}/status")
 async def get_scenario_status(scenario_id: int):
-    """בדיקת סטטוס תרחיש"""
+    """Get scenario status"""
     if scenario_id not in active_scenarios:
         raise HTTPException(status_code=404, detail="Scenario not running")
     
@@ -179,18 +154,15 @@ async def get_scenario_status(scenario_id: int):
 
 @app.post("/scenarios/{scenario_id}/stop")
 async def stop_scenario(scenario_id: int):
-    """עצירת תרחיש"""
+    """Stop a running scenario"""
     if scenario_id not in active_scenarios:
         raise HTTPException(status_code=404, detail="Scenario not running")
     
-    # עצירת containers
     docker_result = docker_service.stop_scenario_containers()
     
-    # עצירת התרחיש
     session = active_scenarios.pop(scenario_id)
     session.status = ScenarioStatus.STOPPED
     
-    # הוספת לוג סיום
     session.logs.append({
         "timestamp": datetime.now().isoformat(),
         "level": "INFO", 
@@ -211,141 +183,11 @@ async def stop_scenario(scenario_id: int):
         "session": session
     }
 
-@app.get("/containers")
-async def get_containers():
-    """קבלת מידע על containers רצים"""
-    containers = docker_service.get_running_containers()
-    return {
-        "containers": containers,
-        "count": len(containers),
-        "timestamp": datetime.now().isoformat()
-    }
-
-@app.get("/containers/{container_name}/logs")
-async def get_container_logs(container_name: str, lines: int = 50):
-    """קבלת לוגים מcontainer ספציפי"""
-    result = docker_service.get_container_logs(container_name, lines)
-    return result
-
-@app.post("/scenarios/{scenario_id}/attack")
-async def simulate_attack(scenario_id: int):
-    """הרצת סימולציית התקפה"""
-    if scenario_id not in active_scenarios:
-        raise HTTPException(status_code=404, detail="Scenario not running")
-    
-    session = active_scenarios[scenario_id]
-    
-    # הרצת סימולציית דיוג
-    attack_steps = docker_service.simulate_phishing_attack()
-    
-    # הוספת התקפה ללוגים
-    session.logs.append({
-        "timestamp": datetime.now().isoformat(),
-        "level": "WARNING",
-        "message": "Phishing attack simulation started",
-        "source": "attack_simulator",
-        "details": attack_steps
-    })
-    
-    return {
-        "message": "Attack simulation completed",
-        "scenario_id": scenario_id,
-        "attack_steps": attack_steps,
-        "timestamp": datetime.now().isoformat()
-    }
-
-@app.post("/scenarios/{scenario_id}/response")
-async def submit_response(scenario_id: int, response_data: Dict[str, Any]):
-    """קבלת תגובת התלמיד והחזרת משוב"""
-    if scenario_id not in active_scenarios:
-        raise HTTPException(status_code=404, detail="Scenario not running")
-    
-    session = active_scenarios[scenario_id]
-    action = response_data.get("action")
-    response_time = response_data.get("response_time", 0)
-    
-    # הגדרת תגובות נכונות לפי התרחיש
-    correct_responses = {
-        "phishing": ["isolate", "block_ip"],  # תגובות מתאימות לדיוג
-        "malware": ["isolate", "escalate"],
-        "basic": ["monitor", "isolate"]
-    }
-    
-    scenario_type = "phishing"  # כרגע יש לנו רק תרחיש אחד
-    is_correct = action in correct_responses.get(scenario_type, [])
-    
-    # חישוב ציון לפי זמן תגובה ונכונות
-    score = 0
-    feedback = []
-    
-    if is_correct:
-        score += 50  # נקודות על תגובה נכונה
-        feedback.append(f"בחירה טובה! '{action}' היא תגובה מתאימה למתקפת דיוג.")
-    else:
-        feedback.append(f"'{action}' אינה התגובה האופטימלית למתקפת דיוג.")
-    
-    # ציון לפי זמן תגובה
-    if response_time <= 60:  # תגובה מהירה
-        score += 30
-        feedback.append("זמן תגובה מצוין - מתחת לדקה!")
-    elif response_time <= 120:  # תגובה סבירה
-        score += 20
-        feedback.append("זמן תגובה סביר - 1-2 דקות.")
-    elif response_time <= 300:  # תגובה איטית
-        score += 10
-        feedback.append("זמן תגובה איטי - במקרה אמיתי זה עלול להיות קריטי.")
-    else:
-        feedback.append("זמן תגובה איטי מדי - יש לשפר זמני תגובה.")
-    
-    # הוספת המלצות ספציפיות
-    recommendations = []
-    if action == "monitor":
-        if scenario_type == "phishing":
-            recommendations.append("במקרה של דיוג מתקדם, ניטור לבד אינו מספיק - כדאי לשקול בידוד.")
-    elif action == "escalate":
-        if response_time > 120:
-            recommendations.append("הסלמה טובה, אבל כדאי לעשות צעדי חירום קודם.")
-    elif action == "isolate":
-        recommendations.append("בידוד הוא צעד טוב כדי למנוע התפשטות נוספת.")
-    elif action == "block_ip":
-        recommendations.append("חסימת IP מתאימה למניעת גישה למקור התקיפה.")
-    
-    # רישום התגובה בsession
-    session.user_actions.append({
-        "timestamp": datetime.now().isoformat(),
-        "action": action,
-        "response_time": response_time,
-        "score": score,
-        "is_correct": is_correct
-    })
-    
-    session.logs.append({
-        "timestamp": datetime.now().isoformat(),
-        "level": "INFO",
-        "message": f"Student response: {action} (response time: {response_time}s)",
-        "source": "student_interface"
-    })
-    
-    return {
-        "message": "Response received successfully",
-        "evaluation": {
-            "action": action,
-            "is_correct": is_correct,
-            "score": score,
-            "max_score": 80,
-            "response_time": response_time,
-            "feedback": feedback,
-            "recommendations": recommendations
-        },
-        "scenario_status": "completed" if action in ["isolate", "escalate"] else "ongoing",
-        "timestamp": datetime.now().isoformat()
-    }
-
-# ===== התרחישים המורכבים החדשים =====
+# ===== COMPLEX SCENARIO ENDPOINTS =====
 
 @app.post("/scenarios/complex/{scenario_id}/start")
 async def start_complex_scenario(scenario_id: str):
-    """התחלת תרחיש מורכב"""
+    """Start a complex scenario"""
     session_id = str(uuid.uuid4())
     
     result = await scenario_engine.start_scenario(session_id, scenario_id)
@@ -363,7 +205,7 @@ async def start_complex_scenario(scenario_id: str):
 
 @app.get("/scenarios/complex/{session_id}/events")
 async def get_scenario_events(session_id: str):
-    """קבלת אירועים עדכניים מהתרחיש"""
+    """Get current events from scenario"""
     events = scenario_engine.get_session_events(session_id)
     
     return {
@@ -375,7 +217,7 @@ async def get_scenario_events(session_id: str):
 
 @app.post("/scenarios/complex/{session_id}/respond")
 async def respond_to_event(session_id: str, response_data: Dict[str, Any]):
-    """תגובת התלמיד לאירוע ספציפי"""
+    """Submit student response to an event"""
     event_id = response_data.get("event_id")
     action = response_data.get("action")
     is_suspicious = response_data.get("is_suspicious", False)
@@ -392,7 +234,7 @@ async def respond_to_event(session_id: str, response_data: Dict[str, Any]):
 
 @app.get("/scenarios/complex/{session_id}/summary")
 async def get_scenario_summary(session_id: str):
-    """סיכום ביצועי התלמיד"""
+    """Get scenario performance summary"""
     summary = scenario_engine.get_session_summary(session_id)
     
     if "status" in summary and summary["status"] == "error":
@@ -402,7 +244,7 @@ async def get_scenario_summary(session_id: str):
 
 @app.get("/scenarios/complex/available")
 async def get_available_complex_scenarios():
-    """רשימת תרחישים מורכבים זמינים"""
+    """Get list of available complex scenarios"""
     return {
         "scenarios": [
             {
@@ -416,11 +258,158 @@ async def get_available_complex_scenarios():
         "count": 1
     }
 
+# ===== NEW QUIZ ENDPOINTS =====
+
+@app.get("/quiz/questions")
+async def get_quiz_questions():
+    """Get all quiz questions (without showing correct answers)"""
+    questions = get_all_quiz_questions()
+    
+    # Format questions for frontend (hide correct answer info)
+    formatted_questions = []
+    for q in questions:
+        formatted_questions.append({
+            "question_id": q.question_id,
+            "question_text": q.question_text,
+            "options": [
+                {
+                    "option_id": opt.option_id,
+                    "text": opt.text
+                    # Don't include is_correct field
+                }
+                for opt in q.options
+            ],
+            "category": q.category
+        })
+    
+    return {
+        "questions": formatted_questions,
+        "total": len(formatted_questions),
+        "timestamp": datetime.now().isoformat()
+    }
+
+@app.post("/quiz/submit")
+async def submit_quiz(submission: QuizSubmission):
+    """Submit quiz answers and get results with feedback"""
+    
+    results = []
+    correct_count = 0
+    category_stats = {}
+    
+    # Evaluate each answer
+    for answer in submission.answers:
+        question = get_question_by_id(answer.question_id)
+        
+        if not question:
+            continue
+        
+        # Find correct option
+        correct_option = None
+        for opt in question.options:
+            if opt.is_correct:
+                correct_option = opt.option_id
+                break
+        
+        # Check if answer is correct
+        is_correct = (answer.selected_option == correct_option)
+        if is_correct:
+            correct_count += 1
+        
+        # Track category statistics
+        if question.category not in category_stats:
+            category_stats[question.category] = {"correct": 0, "total": 0}
+        
+        category_stats[question.category]["total"] += 1
+        if is_correct:
+            category_stats[question.category]["correct"] += 1
+        
+        # Add to results
+        results.append(QuizResult(
+            question_id=question.question_id,
+            question_text=question.question_text,
+            selected_option=answer.selected_option,
+            correct_option=correct_option,
+            is_correct=is_correct,
+            explanation=question.explanation,
+            category=question.category
+        ))
+    
+    # Calculate score
+    total_questions = len(submission.answers)
+    score_percentage = (correct_count / total_questions * 100) if total_questions > 0 else 0
+    
+    # Determine letter grade
+    if score_percentage >= 90:
+        letter_grade = "A"
+    elif score_percentage >= 80:
+        letter_grade = "B"
+    elif score_percentage >= 70:
+        letter_grade = "C"
+    elif score_percentage >= 60:
+        letter_grade = "D"
+    else:
+        letter_grade = "F"
+    
+    # Generate recommendations
+    recommendations = []
+    
+    if score_percentage >= 90:
+        recommendations.append("Excellent performance! You have a strong understanding of incident response concepts.")
+        recommendations.append("Consider trying the advanced simulation scenarios to further challenge your skills.")
+    elif score_percentage >= 70:
+        recommendations.append("Good job! You have a solid foundation in incident response.")
+        recommendations.append("Review the topics where you had incorrect answers to strengthen your knowledge.")
+    else:
+        recommendations.append("We recommend reviewing the learning materials in the Learning Center.")
+        recommendations.append("Focus especially on the topics where you had the most difficulty.")
+    
+    # Category-specific recommendations
+    for category, stats in category_stats.items():
+        accuracy = (stats["correct"] / stats["total"] * 100) if stats["total"] > 0 else 0
+        if accuracy < 70:
+            category_names = {
+                "phishing": "Phishing Attacks",
+                "malware": "Malware Detection",
+                "incident_response": "Incident Response Procedures",
+                "forensics": "Digital Forensics"
+            }
+            recommendations.append(
+                f"Consider reviewing the '{category_names.get(category, category)}' topic in the Learning Center."
+            )
+    
+    # Create summary
+    summary = QuizSummary(
+        total_questions=total_questions,
+        correct_answers=correct_count,
+        score_percentage=round(score_percentage, 1),
+        letter_grade=letter_grade,
+        results=results,
+        category_breakdown=category_stats,
+        recommendations=recommendations
+    )
+    
+    return summary
+
+@app.get("/quiz/categories")
+async def get_quiz_categories():
+    """Get quiz question categories and their counts"""
+    questions = get_all_quiz_questions()
+    
+    categories = {}
+    for q in questions:
+        if q.category not in categories:
+            categories[q.category] = 0
+        categories[q.category] += 1
+    
+    return {
+        "categories": categories,
+        "total_questions": len(questions)
+    }
+
 if __name__ == "__main__":
-    # הרצת השרת
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
         port=8000,
-        reload=True  # אפשר hot reload בזמן פיתוח
+        reload=True
     )

@@ -14,7 +14,6 @@ const AdvancedDashboard = () => {
   
   const eventsRef = useRef([]);
 
-  // פולינג לאירועים חדשים - רק כשאין אירוע נבחר
   useEffect(() => {
     let interval;
     if (sessionId && scenarioActive && !selectedEventId) {
@@ -73,7 +72,7 @@ const AdvancedDashboard = () => {
   };
 
   const selectEventForResponse = (eventId) => {
-    if (eventResponses[eventId]) return; // כבר נענה עליו
+    if (eventResponses[eventId]) return;
     setSelectedEventId(eventId);
     setResponseAction('');
     setIsSuspicious(false);
@@ -132,12 +131,10 @@ const AdvancedDashboard = () => {
     }
   };
 
-  // צבע אחיד לכל האירועים - רק כחול
   const getEventColor = (eventId) => {
     const hasResponse = eventResponses[eventId];
     
     if (hasResponse) {
-      // אחרי תגובה - צבע לפי נכונות
       const evaluation = hasResponse.evaluation;
       if (evaluation.correct_suspicion && evaluation.correct_action) {
         return 'border-green-500 bg-green-50';
@@ -147,14 +144,12 @@ const AdvancedDashboard = () => {
         return 'border-red-500 bg-red-50';
       }
     } else {
-      // לפני תגובה - כולם כחול אחיד
       return 'border-blue-400 bg-blue-50';
     }
   };
 
-  // אייקון אחיד לכל האירועים
   const getEventIcon = () => {
-    return 'ℹ️'; // כולם יקבלו את אותו האייקון
+    return 'ℹ️';
   };
 
   const actions = [
@@ -171,11 +166,16 @@ const AdvancedDashboard = () => {
   return React.createElement('div', { className: 'min-h-screen bg-gray-100 p-6' },
     React.createElement('div', { className: 'max-w-6xl mx-auto' },
       
-      // Header
       React.createElement('div', { className: 'bg-white rounded-lg shadow-md p-6 mb-6' },
         React.createElement('div', { className: 'flex items-center justify-between' },
-          React.createElement('h1', { className: 'text-2xl font-bold text-gray-800' },
-            'Advanced Incident Response Training'
+          React.createElement('div', { className: 'flex items-center space-x-4' },
+            React.createElement('a', {
+              href: 'index.html',
+              className: 'px-3 py-2 text-gray-600 hover:text-gray-900 transition'
+            }, '← Home'),
+            React.createElement('h1', { className: 'text-2xl font-bold text-gray-800' },
+              'Advanced Incident Response Training'
+            )
           ),
           React.createElement('div', { className: 'flex items-center space-x-4' },
             React.createElement('div', { 
@@ -198,35 +198,30 @@ const AdvancedDashboard = () => {
         )
       ),
 
-      // Main Content
       showSummary ? (
-        // Summary View
-
-// Summary View - תחליף את הקיים
         React.createElement('div', { className: 'bg-white rounded-lg shadow-lg p-8' },
           React.createElement('h2', { className: 'text-2xl font-bold text-gray-800 mb-8 text-center' },
-            'Simulation results'
+            'Simulation Results'
           ),
           
           summary && React.createElement('div', { className: 'space-y-8' },
             
-            // Overall Performance
             React.createElement('div', { className: 'bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6' },
               React.createElement('h3', { className: 'text-lg font-semibold text-gray-800 mb-4' },
-                'General performance'
+                'General Performance'
               ),
               React.createElement('div', { className: 'grid grid-cols-1 md:grid-cols-3 gap-6' },
                 React.createElement('div', { className: 'text-center' },
                   React.createElement('div', { className: 'text-4xl font-bold text-blue-600' },
                     `${summary.overall_performance.total_score}/${summary.overall_performance.max_possible_score}`
                   ),
-                  React.createElement('div', { className: 'text-sm text-gray-600' }, 'Total score')
+                  React.createElement('div', { className: 'text-sm text-gray-600' }, 'Total Score')
                 ),
                 React.createElement('div', { className: 'text-center' },
                   React.createElement('div', { className: 'text-4xl font-bold text-green-600' },
                     `${summary.overall_performance.overall_accuracy}%`
                   ),
-                  React.createElement('div', { className: 'text-sm text-gray-600' }, 'Overall accuracy')
+                  React.createElement('div', { className: 'text-sm text-gray-600' }, 'Overall Accuracy')
                 ),
                 React.createElement('div', { className: 'text-center' },
                   React.createElement('div', { 
@@ -237,48 +232,46 @@ const AdvancedDashboard = () => {
                       'text-red-600'
                     }`
                   }, summary.overall_performance.letter_grade),
-                  React.createElement('div', { className: 'text-sm text-gray-600' }, 'score')
+                  React.createElement('div', { className: 'text-sm text-gray-600' }, 'Grade')
                 )
               )
             ),
 
-            // Event Statistics
             React.createElement('div', { className: 'bg-gray-50 rounded-lg p-6' },
               React.createElement('h3', { className: 'text-lg font-semibold text-gray-800 mb-4' },
-                'Event statistics'
+                'Event Statistics'
               ),
               React.createElement('div', { className: 'grid grid-cols-2 md:grid-cols-4 gap-4' },
                 React.createElement('div', { className: 'text-center p-3 bg-white rounded' },
                   React.createElement('div', { className: 'text-2xl font-bold text-gray-800' },
                     summary.event_statistics.total_events
                   ),
-                  React.createElement('div', { className: 'text-xs text-gray-600' }, 'Total events')
+                  React.createElement('div', { className: 'text-xs text-gray-600' }, 'Total Events')
                 ),
                 React.createElement('div', { className: 'text-center p-3 bg-white rounded' },
                   React.createElement('div', { className: 'text-2xl font-bold text-red-600' },
                     summary.event_statistics.total_suspicious_events
                   ),
-                  React.createElement('div', { className: 'text-xs text-gray-600' }, 'Suspicious events')
+                  React.createElement('div', { className: 'text-xs text-gray-600' }, 'Suspicious Events')
                 ),
                 React.createElement('div', { className: 'text-center p-3 bg-white rounded' },
                   React.createElement('div', { className: 'text-2xl font-bold text-green-600' },
                     summary.event_statistics.events_responded_to
                   ),
-                  React.createElement('div', { className: 'text-xs text-gray-600' }, 'Treated')
+                  React.createElement('div', { className: 'text-xs text-gray-600' }, 'Responded')
                 ),
                 React.createElement('div', { className: 'text-center p-3 bg-white rounded' },
                   React.createElement('div', { className: 'text-2xl font-bold text-orange-600' },
                     summary.event_statistics.unanswered_events
                   ),
-                  React.createElement('div', { className: 'text-xs text-gray-600' }, 'Not treated')
+                  React.createElement('div', { className: 'text-xs text-gray-600' }, 'Unanswered')
                 )
               )
             ),
 
-            // Detailed Results
             React.createElement('div', { className: 'bg-white border border-gray-200 rounded-lg p-6' },
               React.createElement('h3', { className: 'text-lg font-semibold text-gray-800 mb-4' },
-                'Full details of all events'
+                'Detailed Event Results'
               ),
               React.createElement('div', { className: 'space-y-3 max-h-96 overflow-y-auto' },
                 summary.detailed_results.map((event, index) =>
@@ -296,8 +289,8 @@ const AdvancedDashboard = () => {
                       React.createElement('div', { className: 'flex-1' },
                         React.createElement('p', { className: 'font-medium text-sm mb-2' }, event.message),
                         React.createElement('div', { className: 'text-xs space-y-1' },
-                          React.createElement('p', null, `✓ suspect: ${event.actual_suspicion ? 'yes' : 'no'}`),
-                          React.createElement('p', null, `✓ Correct actions: ${event.correct_action_options.join(', ')}`),
+                          React.createElement('p', null, `✓ Suspicious: ${event.actual_suspicion ? 'Yes' : 'No'}`),
+                          React.createElement('p', null, `✓ Correct Actions: ${event.correct_action_options.join(', ')}`),
                           React.createElement('p', { className: 'text-gray-600 italic' }, event.explanation)
                         )
                       ),
@@ -306,13 +299,13 @@ const AdvancedDashboard = () => {
                           React.createElement('div', null,
                             React.createElement('p', { 
                               className: event.suspicion_correct ? 'text-green-600' : 'text-red-600'
-                            }, `זיהוי: ${event.student_marked_suspicious ? 'suspect' : 'normal'}`),
+                            }, `Identified: ${event.student_marked_suspicious ? 'Suspicious' : 'Normal'}`),
                             React.createElement('p', { 
                               className: event.action_correct ? 'text-green-600' : 'text-red-600'
-                            }, `פעולה: ${event.student_action}`),
+                            }, `Action: ${event.student_action}`),
                             React.createElement('p', { className: 'font-bold' }, `${event.points_earned}/50 points`)
                           ) :
-                          React.createElement('p', { className: 'text-orange-600 font-medium' }, 'Not treated\n0/50 points')
+                          React.createElement('p', { className: 'text-orange-600 font-medium' }, 'Not Responded\n0/50 points')
                       )
                     )
                   )
@@ -320,10 +313,9 @@ const AdvancedDashboard = () => {
               )
             ),
 
-            // Recommendations
             React.createElement('div', { className: 'bg-blue-50 border border-blue-200 rounded-lg p-6' },
               React.createElement('h3', { className: 'text-lg font-semibold text-blue-800 mb-4' },
-                'Recommendations for improvement'
+                'Recommendations for Improvement'
               ),
               React.createElement('ul', { className: 'space-y-2' },
                 summary.recommendations.map((rec, index) =>
@@ -338,16 +330,19 @@ const AdvancedDashboard = () => {
               )
             ),
             
-            React.createElement('div', { className: 'text-center' },
+            React.createElement('div', { className: 'flex justify-center space-x-4' },
+              React.createElement('a', {
+                href: 'index.html',
+                className: 'px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium'
+              }, 'Back to Home'),
               React.createElement('button', {
                 onClick: () => window.location.reload(),
                 className: 'px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 font-medium'
-              }, 'Try a new simulation')
+              }, 'Try Another Simulation')
             )
           )
         )
       ) : (
-        // Events and Response View
         React.createElement('div', { className: 'grid grid-cols-1 lg:grid-cols-3 gap-6' },
           
           React.createElement('div', { className: 'lg:col-span-2' },
@@ -406,7 +401,7 @@ const AdvancedDashboard = () => {
                       ),
                       React.createElement('div', { className: 'flex flex-col items-end' },
                         React.createElement('span', { className: 'px-2 py-1 text-xs rounded font-medium bg-blue-100 text-blue-800' }, 
-                          'INFO' // כולם יקבלו INFO
+                          'INFO'
                         ),
                         
                         !hasResponse && !isSelected && React.createElement('button', {
@@ -428,10 +423,8 @@ const AdvancedDashboard = () => {
             )
           ),
 
-          // Response Panel
           React.createElement('div', { className: 'space-y-6' },
             selectedEvent ? (
-              // Response Form
               React.createElement('div', { className: 'bg-white rounded-lg shadow-md p-6' },
                 React.createElement('h3', { className: 'text-lg font-semibold text-gray-800 mb-4' },
                   'Respond to Selected Event'
@@ -514,7 +507,6 @@ const AdvancedDashboard = () => {
                 )
               )
             ) : (
-              // Instructions
               React.createElement('div', { className: 'bg-white rounded-lg shadow-md p-6' },
                 React.createElement('h3', { className: 'text-lg font-semibold text-gray-800 mb-4' },
                   'Instructions'
@@ -529,7 +521,6 @@ const AdvancedDashboard = () => {
               )
             ),
 
-            // Current Scenario Info
             React.createElement('div', { className: 'bg-white rounded-lg shadow-md p-6' },
               React.createElement('h3', { className: 'text-lg font-semibold text-gray-800 mb-4' },
                 'Current Scenario'
