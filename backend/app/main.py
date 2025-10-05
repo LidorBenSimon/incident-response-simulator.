@@ -5,37 +5,43 @@ import uvicorn
 from datetime import datetime
 import json
 import uuid
+import os
 
-# Import existing models and services
+# Existing imports
 from models.scenario import Scenario, ScenarioSession, ScenarioCreate, ScenarioStatus
 from scenarios.phishing_basic import BASIC_PHISHING_SCENARIO
 from services.docker_service import DockerService
 from services.scenario_engine import ScenarioEngine
 
-# Import new quiz models and data
+# Quiz imports
 from models.quiz_model import QuizSubmission, QuizSummary, QuizResult
 from data.quiz_questions import get_all_quiz_questions, get_question_by_id
+
+# NEW: Log Challenge imports
+from models.log_challenge import LogLevel, LogSubmission, LogChallengeResult, FindingEvaluation, UserFinding, ThreatType
+from data.logs.log_challenges_data import get_challenge_by_level
 
 # Create FastAPI app
 app = FastAPI(
     title="Incident Response Simulator API", 
-    description="API for managing cybersecurity incident response simulations and quizzes",
-    version="2.0.0"
+    description="API for managing cybersecurity incident response simulations, quizzes, and log analysis",
+    version="3.0.0"
 )
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:5500", "*"],  # Add your frontend URLs
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Temporary storage (later replace with database)
+# Temporary storage
 scenarios_db = [BASIC_PHISHING_SCENARIO]
 active_scenarios = {}
-quiz_sessions = {}  # Store quiz session data
+quiz_sessions = {}
+log_sessions = {}
 
 # Services
 docker_service = DockerService()
@@ -48,8 +54,8 @@ async def root():
         "message": "Incident Response Simulator API",
         "status": "running",
         "timestamp": datetime.now().isoformat(),
-        "version": "2.0.0",
-        "features": ["simulations", "quizzes", "learning"]
+        "version": "3.0.0",
+        "features": ["simulations", "quizzes", "log_analysis"]
     }
 
 @app.get("/health")
@@ -65,7 +71,7 @@ async def health_check():
         }
     }
 
-# ===== EXISTING SCENARIO ENDPOINTS =====
+# ===== SCENARIO ENDPOINTS (existing) =====
 
 @app.get("/scenarios")
 async def get_scenarios():
@@ -87,103 +93,6 @@ async def get_scenarios():
         "count": len(scenarios_db),
         "active_scenarios": len(active_scenarios)
     }
-
-@app.post("/scenarios/{scenario_id}/run")
-async def run_scenario(scenario_id: int):
-    """Start a scenario simulation"""
-    if scenario_id < 1 or scenario_id > len(scenarios_db):
-        raise HTTPException(status_code=404, detail="Scenario not found")
-    
-    scenario = scenarios_db[scenario_id - 1]
-    
-    if scenario_id in active_scenarios:
-        raise HTTPException(status_code=400, detail="Scenario already running")
-    
-    session_id = str(uuid.uuid4())
-    
-    session = ScenarioSession(
-        session_id=session_id,
-        scenario_id=scenario_id,
-        started_at=datetime.now(),
-        status=ScenarioStatus.RUNNING,
-        current_step=0,
-        logs=[],
-        user_actions=[],
-        alerts=[]
-    )
-    
-    active_scenarios[scenario_id] = session
-    
-    docker_result = docker_service.start_scenario_containers(scenario_id)
-    
-    session.logs.append({
-        "timestamp": datetime.now().isoformat(),
-        "level": "INFO",
-        "message": f"Starting scenario: {scenario.name}",
-        "source": "orchestrator"
-    })
-    
-    session.logs.append({
-        "timestamp": datetime.now().isoformat(),
-        "level": "INFO" if docker_result["status"] == "success" else "ERROR",
-        "message": f"Docker containers: {docker_result['message']}",
-        "source": "docker_service",
-        "details": docker_result
-    })
-    
-    return {
-        "message": f"Scenario '{scenario.name}' started successfully",
-        "session_id": session_id,
-        "scenario": {
-            "name": scenario.name,
-            "type": scenario.type,
-            "estimated_duration": scenario.estimated_duration,
-            "steps": len(scenario.steps)
-        },
-        "docker_status": docker_result,
-        "status": session.status
-    }
-
-@app.get("/scenarios/{scenario_id}/status")
-async def get_scenario_status(scenario_id: int):
-    """Get scenario status"""
-    if scenario_id not in active_scenarios:
-        raise HTTPException(status_code=404, detail="Scenario not running")
-    
-    return active_scenarios[scenario_id]
-
-@app.post("/scenarios/{scenario_id}/stop")
-async def stop_scenario(scenario_id: int):
-    """Stop a running scenario"""
-    if scenario_id not in active_scenarios:
-        raise HTTPException(status_code=404, detail="Scenario not running")
-    
-    docker_result = docker_service.stop_scenario_containers()
-    
-    session = active_scenarios.pop(scenario_id)
-    session.status = ScenarioStatus.STOPPED
-    
-    session.logs.append({
-        "timestamp": datetime.now().isoformat(),
-        "level": "INFO", 
-        "message": "Scenario stopped by user",
-        "source": "orchestrator"
-    })
-    
-    session.logs.append({
-        "timestamp": datetime.now().isoformat(),
-        "level": "INFO" if docker_result["status"] == "success" else "ERROR",
-        "message": f"Docker containers: {docker_result['message']}",
-        "source": "docker_service"
-    })
-    
-    return {
-        "message": "Scenario stopped successfully",
-        "docker_status": docker_result,
-        "session": session
-    }
-
-# ===== COMPLEX SCENARIO ENDPOINTS =====
 
 @app.post("/scenarios/complex/{scenario_id}/start")
 async def start_complex_scenario(scenario_id: str):
@@ -242,30 +151,13 @@ async def get_scenario_summary(session_id: str):
     
     return summary
 
-@app.get("/scenarios/complex/available")
-async def get_available_complex_scenarios():
-    """Get list of available complex scenarios"""
-    return {
-        "scenarios": [
-            {
-                "scenario_id": "advanced_phishing",
-                "name": "Advanced Multi-Stage Attack",
-                "description": "Complex phishing attack that escalates to lateral movement and data exfiltration",
-                "total_events": 16,
-                "difficulty": "intermediate"
-            }
-        ],
-        "count": 1
-    }
-
-# ===== NEW QUIZ ENDPOINTS =====
+# ===== QUIZ ENDPOINTS (existing) =====
 
 @app.get("/quiz/questions")
 async def get_quiz_questions():
     """Get all quiz questions (without showing correct answers)"""
     questions = get_all_quiz_questions()
     
-    # Format questions for frontend (hide correct answer info)
     formatted_questions = []
     for q in questions:
         formatted_questions.append({
@@ -275,7 +167,6 @@ async def get_quiz_questions():
                 {
                     "option_id": opt.option_id,
                     "text": opt.text
-                    # Don't include is_correct field
                 }
                 for opt in q.options
             ],
@@ -296,26 +187,22 @@ async def submit_quiz(submission: QuizSubmission):
     correct_count = 0
     category_stats = {}
     
-    # Evaluate each answer
     for answer in submission.answers:
         question = get_question_by_id(answer.question_id)
         
         if not question:
             continue
         
-        # Find correct option
         correct_option = None
         for opt in question.options:
             if opt.is_correct:
                 correct_option = opt.option_id
                 break
         
-        # Check if answer is correct
         is_correct = (answer.selected_option == correct_option)
         if is_correct:
             correct_count += 1
         
-        # Track category statistics
         if question.category not in category_stats:
             category_stats[question.category] = {"correct": 0, "total": 0}
         
@@ -323,7 +210,6 @@ async def submit_quiz(submission: QuizSubmission):
         if is_correct:
             category_stats[question.category]["correct"] += 1
         
-        # Add to results
         results.append(QuizResult(
             question_id=question.question_id,
             question_text=question.question_text,
@@ -334,11 +220,9 @@ async def submit_quiz(submission: QuizSubmission):
             category=question.category
         ))
     
-    # Calculate score
     total_questions = len(submission.answers)
     score_percentage = (correct_count / total_questions * 100) if total_questions > 0 else 0
     
-    # Determine letter grade
     if score_percentage >= 90:
         letter_grade = "A"
     elif score_percentage >= 80:
@@ -350,7 +234,6 @@ async def submit_quiz(submission: QuizSubmission):
     else:
         letter_grade = "F"
     
-    # Generate recommendations
     recommendations = []
     
     if score_percentage >= 90:
@@ -363,7 +246,6 @@ async def submit_quiz(submission: QuizSubmission):
         recommendations.append("We recommend reviewing the learning materials in the Learning Center.")
         recommendations.append("Focus especially on the topics where you had the most difficulty.")
     
-    # Category-specific recommendations
     for category, stats in category_stats.items():
         accuracy = (stats["correct"] / stats["total"] * 100) if stats["total"] > 0 else 0
         if accuracy < 70:
@@ -377,7 +259,6 @@ async def submit_quiz(submission: QuizSubmission):
                 f"Consider reviewing the '{category_names.get(category, category)}' topic in the Learning Center."
             )
     
-    # Create summary
     summary = QuizSummary(
         total_questions=total_questions,
         correct_answers=correct_count,
@@ -390,21 +271,232 @@ async def submit_quiz(submission: QuizSubmission):
     
     return summary
 
-@app.get("/quiz/categories")
-async def get_quiz_categories():
-    """Get quiz question categories and their counts"""
-    questions = get_all_quiz_questions()
-    
-    categories = {}
-    for q in questions:
-        if q.category not in categories:
-            categories[q.category] = 0
-        categories[q.category] += 1
-    
+# ===== NEW: LOG ANALYSIS CHALLENGE ENDPOINTS =====
+
+@app.get("/log-challenge/levels")
+async def get_log_challenge_levels():
+    """Get available log challenge levels"""
     return {
-        "categories": categories,
-        "total_questions": len(questions)
+        "levels": [
+            {
+                "level": "basic",
+                "title": "Basic Log Analysis",
+                "description": "Introduction to threat detection with clear attack patterns",
+                "total_lines": 200,
+                "total_threats": 8,
+                "time_limit_minutes": 15,
+                "difficulty": "Beginner",
+                "recommended_for": "New SOC analysts and students"
+            },
+            {
+                "level": "intermediate",
+                "title": "Intermediate Log Analysis",
+                "description": "Mixed traffic with subtle threats requiring pattern analysis",
+                "total_lines": 500,
+                "total_threats": 12,
+                "time_limit_minutes": 25,
+                "difficulty": "Intermediate",
+                "recommended_for": "Analysts with basic experience"
+            },
+            {
+                "level": "advanced",
+                "title": "Advanced APT Detection",
+                "description": "Enterprise logs with APT campaign and false positives",
+                "total_lines": 1000,
+                "total_threats": 18,
+                "time_limit_minutes": 40,
+                "difficulty": "Advanced",
+                "recommended_for": "Senior analysts and threat hunters"
+            }
+        ]
     }
+
+@app.get("/log-challenge/{level}/logs")
+async def get_log_file(level: str):
+    """Get log file content for a specific level"""
+    try:
+        log_level = LogLevel(level.lower())
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid level. Use: basic, intermediate, or advanced")
+    
+    # Get challenge info
+    challenge = get_challenge_by_level(log_level)
+    
+    # Get absolute path to log file
+    import os
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    level_num = 1 if log_level == LogLevel.BASIC else 2 if log_level == LogLevel.INTERMEDIATE else 3
+    log_file_path = os.path.join(base_dir, "data", "logs", f"level{level_num}_{level.lower()}.log")
+    
+    try:
+        with open(log_file_path, 'r') as f:
+            log_content = f.read()
+        
+        lines = log_content.strip().split('\n')
+        
+        return {
+            "level": level,
+            "title": challenge.title,
+            "description": challenge.description,
+            "total_lines": len(lines),
+            "total_threats": challenge.total_threats,
+            "time_limit_minutes": challenge.time_limit_minutes,
+            "passing_score": challenge.passing_score,
+            "lines": lines,
+            "timestamp": datetime.now().isoformat()
+        }
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Log file not found at: {log_file_path}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading log file: {str(e)}")
+@app.post("/log-challenge/submit")
+async def submit_log_analysis(submission: LogSubmission):
+    """Submit log analysis findings and get detailed feedback"""
+    
+    # Get challenge configuration
+    challenge = get_challenge_by_level(submission.level)
+    
+    if not challenge:
+        raise HTTPException(status_code=400, detail="Invalid challenge level")
+    
+    # Create a map of actual threats by line number
+    actual_threats_map = {threat.line_number: threat for threat in challenge.threat_indicators}
+    
+    evaluations = []
+    threats_found = 0
+    threats_missed = 0
+    false_positives = 0
+    total_points = 0
+    max_points = challenge.total_threats * 10  # 10 points per threat
+    
+    # Track which threats were found
+    found_threat_lines = set()
+    
+    # Evaluate each user finding
+    for finding in submission.findings:
+        line_num = finding.line_number
+        user_threat_type = finding.threat_type
+        
+        if line_num in actual_threats_map:
+            # This line has an actual threat
+            actual_threat = actual_threats_map[line_num]
+            
+            if user_threat_type == actual_threat.threat_type:
+                # Correct identification
+                is_correct = True
+                points = 10
+                threats_found += 1
+                found_threat_lines.add(line_num)
+                feedback = f"✓ Correct! {actual_threat.description}. {actual_threat.mitigation}"
+            else:
+                # Wrong threat type
+                is_correct = False
+                points = 3  # Partial credit for finding the right line
+                feedback = f"Partially correct. You identified a threat on this line, but classified it as {user_threat_type.value} instead of {actual_threat.threat_type.value}. {actual_threat.description}"
+            
+            evaluations.append(FindingEvaluation(
+                line_number=line_num,
+                user_threat_type=user_threat_type,
+                is_correct=is_correct,
+                is_false_positive=False,
+                actual_threat_type=actual_threat.threat_type,
+                points_earned=points,
+                feedback=feedback
+            ))
+            total_points += points
+        else:
+            # False positive - no threat on this line
+            false_positives += 1
+            evaluations.append(FindingEvaluation(
+                line_number=line_num,
+                user_threat_type=user_threat_type,
+                is_correct=False,
+                is_false_positive=True,
+                actual_threat_type=None,
+                points_earned=-2,  # Penalty for false positive
+                feedback=f"✗ False positive. This line contains normal activity, not a {user_threat_type.value} threat. Be more careful with threat identification to avoid alert fatigue."
+            ))
+            total_points -= 2
+    
+    # Identify missed threats
+    missed_threats = []
+    for threat in challenge.threat_indicators:
+        if threat.line_number not in found_threat_lines:
+            threats_missed += 1
+            missed_threats.append(threat)
+    
+    # Calculate accuracy
+    if challenge.total_threats > 0:
+        accuracy = (threats_found / challenge.total_threats) * 100
+    else:
+        accuracy = 0
+    
+    # Calculate final score (0-100)
+    score = max(0, min(100, (total_points / max_points) * 100))
+    
+    # Determine if passed
+    passed = score >= challenge.passing_score
+    
+    # Generate summary feedback
+    if score >= 90:
+        summary_feedback = "Outstanding performance! You demonstrated expert-level log analysis skills and identified threats with high accuracy."
+    elif score >= 80:
+        summary_feedback = "Excellent work! You showed strong threat detection capabilities with good attention to detail."
+    elif score >= 70:
+        summary_feedback = "Good job! You identified most threats correctly, but review the missed items to improve your analysis."
+    elif score >= 60:
+        summary_feedback = "Fair performance. You need more practice with threat patterns and reducing false positives."
+    else:
+        summary_feedback = "More training needed. Focus on learning common threat indicators and improving pattern recognition."
+    
+    # Generate recommendations
+    recommendations = []
+    
+    if threats_missed > challenge.total_threats * 0.3:
+        recommendations.append("You missed several threats. Review common attack patterns like brute force, port scans, and data exfiltration indicators.")
+    
+    if false_positives > 3:
+        recommendations.append("Too many false positives detected. Learn to distinguish between normal operations and actual threats to avoid alert fatigue.")
+    
+    if threats_found > 0 and threats_found < challenge.total_threats * 0.5:
+        recommendations.append("Focus on improving threat detection rate. Study SIEM rules and common IOCs (Indicators of Compromise).")
+    
+    # Format time taken
+    minutes = submission.time_taken_seconds // 60
+    seconds = submission.time_taken_seconds % 60
+    time_taken_str = f"{minutes}m {seconds}s"
+    
+    if submission.time_taken_seconds < challenge.time_limit_minutes * 60:
+        recommendations.append(f"Good time management! Completed in {time_taken_str}.")
+    else:
+        recommendations.append(f"Consider improving analysis speed. Took {time_taken_str}, over the {challenge.time_limit_minutes} minute target.")
+    
+    if passed and submission.level == LogLevel.BASIC:
+        recommendations.append("Ready for the next level! Try the Intermediate challenge to test advanced skills.")
+    elif passed and submission.level == LogLevel.INTERMEDIATE:
+        recommendations.append("Impressive! You're ready for the Advanced APT detection challenge.")
+    elif passed:
+        recommendations.append("Expert level achieved! Consider pursuing SOC analyst certifications.")
+    
+    result = LogChallengeResult(
+        level=submission.level,
+        total_threats=challenge.total_threats,
+        threats_found=threats_found,
+        threats_missed=threats_missed,
+        false_positives=false_positives,
+        accuracy_percentage=round(accuracy, 1),
+        score=round(score, 1),
+        max_score=100,
+        time_taken=time_taken_str,
+        passed=passed,
+        evaluations=evaluations,
+        missed_threats=missed_threats,
+        summary_feedback=summary_feedback,
+        recommendations=recommendations
+    )
+    
+    return result
 
 if __name__ == "__main__":
     uvicorn.run(

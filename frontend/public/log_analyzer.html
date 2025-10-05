@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log Analysis Challenge - IR Training</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .log-line {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 4px 8px;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .log-line:hover {
+            background-color: #f3f4f6;
+        }
+        .log-line.flagged {
+            background-color: #fef3c7;
+            border-left-color: #f59e0b;
+        }
+        .log-line.selected {
+            background-color: #dbeafe;
+            border-left-color: #3b82f6;
+        }
+        .log-viewer {
+            max-height: 600px;
+            overflow-y: auto;
+            background: #1f2937;
+            color: #f9fafb;
+            border-radius: 8px;
+        }
+        .line-number {
+            display: inline-block;
+            width: 45px;
+            text-align: right;
+            margin-right: 12px;
+            color: #6b7280;
+            user-select: none;
+        }
+        .log-content {
+            color: #e5e7eb;
+        }
+        .timestamp {
+            color: #60a5fa;
+        }
+        .log-level-INFO {
+            color: #34d399;
+        }
+        .log-level-WARNING {
+            color: #fbbf24;
+        }
+        .log-level-CRITICAL {
+            color: #f87171;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const LogAnalyzer = () => {
+            const [selectedLevel, setSelectedLevel] = useState(null);
+            const [logData, setLogData] = useState(null);
+            const [loading, setLoading] = useState(false);
+            const [analyzing, setAnalyzing] = useState(false);
+            const [flaggedLines, setFlaggedLines] = useState({});
+            const [selectedLine, setSelectedLine] = useState(null);
+            const [searchTerm, setSearchTerm] = useState('');
+            const [filterLevel, setFilterLevel] = useState('all');
+            const [showResults, setShowResults] = useState(false);
+            const [results, setResults] = useState(null);
+            const [startTime, setStartTime] = useState(null);
+            const [elapsedTime, setElapsedTime] = useState(0);
+            const timerRef = useRef(null);
+
+            useEffect(() => {
+                if (analyzing && startTime) {
+                    timerRef.current = setInterval(() => {
+                        setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+                    }, 1000);
+                }
+                return () => {
+                    if (timerRef.current) clearInterval(timerRef.current);
+                };
+            }, [analyzing, startTime]);
+
+            const startChallenge = async (level) => {
+                setLoading(true);
+                setSelectedLevel(level);
+                
+                try {
+                    const response = await fetch(`http://localhost:8000/log-challenge/${level}/logs`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        setLogData(data);
+                        setAnalyzing(true);
+                        setStartTime(Date.now());
+                    }
+                } catch (error) {
+                    console.error('Error loading logs:', error);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const toggleFlag = (lineNum, threatType) => {
+                setFlaggedLines(prev => {
+                    const newFlags = { ...prev };
+                    if (newFlags[lineNum]) {
+                        delete newFlags[lineNum];
+                    } else {
+                        newFlags[lineNum] = {
+                            threat_type: threatType,
+                            confidence: 'high',
+                            notes: ''
+                        };
+                    }
+                    return newFlags;
+                });
+                setSelectedLine(null);
+            };
+
+            const submitAnalysis = async () => {
+                const findings = Object.entries(flaggedLines).map(([lineNum, data]) => ({
+                    line_number: parseInt(lineNum),
+                    threat_type: data.threat_type,
+                    confidence: data.confidence,
+                    notes: data.notes || null
+                }));
+
+                const submission = {
+                    level: selectedLevel,
+                    findings: findings,
+                    time_taken_seconds: elapsedTime
+                };
+
+                try {
+                    const response = await fetch('http://localhost:8000/log-challenge/submit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(submission)
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        setResults(data);
+                        setShowResults(true);
+                        setAnalyzing(false);
+                        if (timerRef.current) clearInterval(timerRef.current);
+                    }
+                } catch (error) {
+                    console.error('Error submitting analysis:', error);
+                }
+            };
+
+            const filteredLines = logData?.lines.filter(line => {
+                const matchesSearch = searchTerm === '' || line.toLowerCase().includes(searchTerm.toLowerCase());
+                const matchesFilter = filterLevel === 'all' || line.includes(`[${filterLevel}]`);
+                return matchesSearch && matchesFilter;
+            }) || [];
+
+            const formatTime = (seconds) => {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            };
+
+            const getThreatTypeColor = (type) => {
+                const colors = {
+                    brute_force: 'bg-red-100 text-red-800',
+                    port_scan: 'bg-orange-100 text-orange-800',
+                    malware: 'bg-purple-100 text-purple-800',
+                    data_exfiltration: 'bg-pink-100 text-pink-800',
+                    lateral_movement: 'bg-indigo-100 text-indigo-800',
+                    privilege_escalation: 'bg-yellow-100 text-yellow-800',
+                    suspicious_process: 'bg-blue-100 text-blue-800',
+                    unauthorized_access: 'bg-red-100 text-red-800',
+                    sql_injection: 'bg-purple-100 text-purple-800'
+                };
+                return colors[type] || 'bg-gray-100 text-gray-800';
+            };
+
+            const renderLogLine = (line, index) => {
+                const lineNum = index + 1;
+                const isFlagged = flaggedLines[lineNum];
+                const isSelected = selectedLine === lineNum;
+                
+                // Parse log line for syntax highlighting
+                const timestampMatch = line.match(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/);
+                const levelMatch = line.match(/\[(INFO|WARNING|CRITICAL)\]/);
+                
+                return (
+                    <div
+                        key={lineNum}
+                        className={`log-line ${isFlagged ? 'flagged' : ''} ${isSelected ? 'selected' : ''}`}
+                        onClick={() => setSelectedLine(lineNum)}
+                    >
+                        <span className="line-number">{lineNum}</span>
+                        <span className="log-content">
+                            {timestampMatch && <span className="timestamp">{timestampMatch[0]}</span>}
+                            {' '}
+                            {levelMatch && <span className={`log-level-${levelMatch[1]}`}>{levelMatch[0]}</span>}
+                            {' '}
+                            {line.substring((timestampMatch?.[0].length || 0) + (levelMatch?.[0].length || 0) + 2)}
+                        </span>
+                        {isFlagged && (
+                            <span className="ml-2 px-2 py-1 text-xs rounded bg-yellow-500 text-white">
+                                🚩 {isFlagged.threat_type.replace('_', ' ').toUpperCase()}
+                            </span>
+                        )}
+                    </div>
+                );
+            };
+
+            if (showResults && results) {
+                // Results View
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+                        <nav className="bg-white shadow-sm">
+                            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                                <div className="flex justify-between items-center h-16">
+                                    <a href="index.html" className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                                        IR Simulator
+                                    </a>
+                                    <a href="index.html" className="px-4 py-2 text-gray-700 hover:text-gray-900 font-medium transition">
+                                        ← Back to Home
+                                    </a>
+                                </div>
+                            </div>
+                        </nav>
+
+                        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                            <div className="bg-white rounded-2xl shadow-xl p-8">
+                                <h1 className="text-3xl font-bold text-center text-gray-900 mb-8">
+                                    Log Analysis Results
+                                </h1>
+
+                                {/* Score Overview */}
+                                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-8">
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                        <div className="text-center">
+                                            <div className={`text-4xl font-bold ${results.passed ? 'text-green-600' : 'text-red-600'}`}>
+                                                {results.score}%
+                                            </div>
+                                            <div className="text-sm text-gray-600 mt-1">Final Score</div>
+                                            <div className={`text-xs mt-2 px-3 py-1 rounded-full inline-block ${results.passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                                {results.passed ? '✓ PASSED' : '✗ FAILED'}
+                                            </div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="text-4xl font-bold text-blue-600">
+                                                {results.threats_found}/{results.total_threats}
+                                            </div>
+                                            <div className="text-sm text-gray-600 mt-1">Threats Found</div>
+                                            <div className="text-xs text-gray-500 mt-2">{results.accuracy_percentage}% Accuracy</div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="text-4xl font-bold text-orange-600">
+                                                {results.false_positives}
+                                            </div>
+                                            <div className="text-sm text-gray-600 mt-1">False Positives</div>
+                                            <div className="text-xs text-gray-500 mt-2">-{results.false_positives * 2} points</div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="text-4xl font-bold text-gray-600">
+                                                {results.time_taken}
+                                            </div>
+                                            <div className="text-sm text-gray-600 mt-1">Time Taken</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Summary Feedback */}
+                                <div className="bg-blue-50 border-l-4 border-blue-500 p-6 mb-8">
+                                    <p className="text-blue-900 font-medium">{results.summary_feedback}</p>
+                                </div>
+
+                                {/* Detailed Evaluations */}
+                                <div className="mb-8">
+                                    <h3 className="text-xl font-semibold text-gray-800 mb-4">Your Findings Evaluation</h3>
+                                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                                        {results.evaluations.map((evalu, idx) => (
+                                            <div
+                                                key={idx}
+                                                className={`p-4 rounded-lg border-2 ${
+                                                    evalu.is_correct ? 'border-green-300 bg-green-50' :
+                                                    evalu.is_false_positive ? 'border-red-300 bg-red-50' :
+                                                    'border-yellow-300 bg-yellow-50'
+                                                }`}
+                                            >
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center space-x-2 mb-2">
+                                                            <span className="text-sm font-mono text-gray-600">Line {evalu.line_number}</span>
+                                                            <span className={`px-2 py-1 rounded text-xs font-medium ${getThreatTypeColor(evalu.user_threat_type)}`}>
+                                                                {evalu.user_threat_type.replace('_', ' ').toUpperCase()}
+                                                            </span>
+                                                            {evalu.is_correct && <span className="text-green-600 font-bold">✓</span>}
+                                                            {evalu.is_false_positive && <span className="text-red-600 font-bold">✗</span>}
+                                                        </div>
+                                                        <p className="text-sm text-gray-700">{evalu.feedback}</p>
+                                                    </div>
+                                                    <div className="text-right ml-4">
+                                                        <div className={`text-lg font-bold ${evalu.points_earned > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                            {evalu.points_earned > 0 ? '+' : ''}{evalu.points_earned} pts
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Missed Threats */}
+                                {results.missed_threats.length > 0 && (
+                                    <div className="mb-8">
+                                        <h3 className="text-xl font-semibold text-gray-800 mb-4">Missed Threats ({results.missed_threats.length})</h3>
+                                        <div className="space-y-3">
+                                            {results.missed_threats.map((threat, idx) => (
+                                                <div key={idx} className="p-4 border-2 border-orange-300 bg-orange-50 rounded-lg">
+                                                    <div className="flex items-start justify-between mb-2">
+                                                        <span className="text-sm font-mono text-gray-600">Line {threat.line_number}</span>
+                                                        <span className={`px-3 py-1 rounded text-xs font-medium ${getThreatTypeColor(threat.threat_type)}`}>
+                                                            {threat.threat_type.replace('_', ' ').toUpperCase()}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-sm font-medium text-gray-900 mb-1">{threat.description}</p>
+                                                    <p className="text-xs text-gray-700 mb-2"><strong>Evidence:</strong> {threat.evidence}</p>
+                                                    <p className="text-xs text-blue-700"><strong>Mitigation:</strong> {threat.mitigation}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Recommendations */}
+                                <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 mb-6">
+                                    <h3 className="text-lg font-semibold text-purple-900 mb-3">Recommendations</h3>
+                                    <ul className="space-y-2">
+                                        {results.recommendations.map((rec, idx) => (
+                                            <li key={idx} className="flex items-start text-sm text-purple-800">
+                                                <span className="text-purple-500 mr-2">•</span>
+                                                {rec}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex justify-center space-x-4">
+                                    <a
+                                        href="index.html"
+                                        className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium transition"
+                                    >
+                                        Back to Home
+                                    </a>
+                                    <button
+                                        onClick={() => window.location.reload()}
+                                        className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 font-medium transition"
+                                    >
+                                        Try Another Challenge
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (analyzing && logData) {
+                // Analysis View
+                const threatTypes = [
+                    { value: 'brute_force', label: 'Brute Force' },
+                    { value: 'port_scan', label: 'Port Scan' },
+                    { value: 'malware', label: 'Malware' },
+                    { value: 'data_exfiltration', label: 'Data Exfiltration' },
+                    { value: 'lateral_movement', label: 'Lateral Movement' },
+                    { value: 'privilege_escalation', label: 'Privilege Escalation' },
+                    { value: 'suspicious_process', label: 'Suspicious Process' },
+                    { value: 'unauthorized_access', label: 'Unauthorized Access' },
+                    { value: 'sql_injection', label: 'SQL Injection' }
+                ];
+
+                return (
+                    <div className="min-h-screen bg-gray-900">
+                        {/* Top Bar */}
+                        <div className="bg-gray-800 border-b border-gray-700 px-6 py-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-6">
+                                    <a href="index.html" className="text-white hover:text-gray-300">← Home</a>
+                                    <h1 className="text-xl font-bold text-white">{logData.title}</h1>
+                                    <span className="px-3 py-1 bg-blue-600 text-white rounded text-sm">
+                                        {selectedLevel.toUpperCase()}
+                                    </span>
+                                </div>
+                                <div className="flex items-center space-x-6">
+                                    <div className="text-white">
+                                        <span className="text-gray-400">Time:</span>
+                                        <span className="ml-2 font-mono text-lg">{formatTime(elapsedTime)}</span>
+                                        <span className="text-gray-400 text-sm ml-2">/ {logData.time_limit_minutes}m</span>
+                                    </div>
+                                    <div className="text-white">
+                                        <span className="text-gray-400">Flagged:</span>
+                                        <span className="ml-2 font-bold">{Object.keys(flaggedLines).length}</span>
+                                        <span className="text-gray-400 text-sm ml-1">/ {logData.total_threats} threats</span>
+                                    </div>
+                                    <button
+                                        onClick={submitAnalysis}
+                                        disabled={Object.keys(flaggedLines).length === 0}
+                                        className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
+                                    >
+                                        Submit Analysis
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Main Content */}
+                        <div className="flex h-screen">
+                            {/* Log Viewer */}
+                            <div className="flex-1 p-6">
+                                <div className="bg-white rounded-lg p-4 mb-4">
+                                    <div className="flex space-x-4">
+                                        <input
+                                            type="text"
+                                            placeholder="Search logs..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        />
+                                        <select
+                                            value={filterLevel}
+                                            onChange={(e) => setFilterLevel(e.target.value)}
+                                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            <option value="all">All Levels</option>
+                                            <option value="INFO">INFO</option>
+                                            <option value="WARNING">WARNING</option>
+                                            <option value="CRITICAL">CRITICAL</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="log-viewer">
+                                    {filteredLines.map((line, idx) => renderLogLine(line, idx))}
+                                </div>
+                            </div>
+
+                            {/* Right Sidebar */}
+                            <div className="w-96 bg-gray-800 p-6 overflow-y-auto">
+                                {selectedLine ? (
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-white mb-4">
+                                            Flag Line {selectedLine}
+                                        </h3>
+                                        <div className="bg-gray-700 p-3 rounded mb-4 text-gray-300 text-sm font-mono">
+                                            {logData.lines[selectedLine - 1]}
+                                        </div>
+                                        <p className="text-gray-400 text-sm mb-4">
+                                            Select threat type if this line indicates malicious activity:
+                                        </p>
+                                        <div className="space-y-2">
+                                            {threatTypes.map(type => (
+                                                <button
+                                                    key={type.value}
+                                                    onClick={() => toggleFlag(selectedLine, type.value)}
+                                                    className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded text-sm font-medium transition"
+                                                >
+                                                    {type.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-white mb-4">
+                                            Instructions
+                                        </h3>
+                                        <div className="space-y-3 text-gray-300 text-sm">
+                                            <p>1. Read through the log file carefully</p>
+                                            <p>2. Click on a line to flag it as a threat</p>
+                                            <p>3. Select the appropriate threat type</p>
+                                            <p>4. Find all {logData.total_threats} threats</p>
+                                            <p>5. Submit your analysis when ready</p>
+                                        </div>
+
+                                        {Object.keys(flaggedLines).length > 0 && (
+                                            <div className="mt-6">
+                                                <h4 className="text-md font-semibold text-white mb-3">Flagged Lines</h4>
+                                                <div className="space-y-2">
+                                                    {Object.entries(flaggedLines).map(([lineNum, data]) => (
+                                                        <div key={lineNum} className="bg-gray-700 p-2 rounded flex justify-between items-center">
+                                                            <span className="text-white text-sm">
+                                                                Line {lineNum}: {data.threat_type.replace('_', ' ')}
+                                                            </span>
+                                                            <button
+                                                                onClick={() => toggleFlag(parseInt(lineNum), data.threat_type)}
+                                                                className="text-red-400 hover:text-red-300"
+                                                            >
+                                                                ✕
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // Level Selection View
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+                    <nav className="bg-white shadow-sm">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex justify-between items-center h-16">
+                                <a href="index.html" className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                                    IR Simulator
+                                </a>
+                                <a href="index.html" className="px-4 py-2 text-gray-700 hover:text-gray-900 font-medium transition">
+                                    ← Back to Home
+                                </a>
+                            </div>
+                        </div>
+                    </nav>
+
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+                        <div className="text-center mb-16">
+                            <h1 className="text-5xl font-extrabold text-gray-900 mb-6">
+                                Log Analysis
+                                <span className="block bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                                    Challenge
+                                </span>
+                            </h1>
+                            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                                Analyze real system logs to identify security threats. Practice threat hunting and 
+                                incident detection skills used by SOC analysts every day.
+                            </p>
+                        </div>
+
+                        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                            {/* Basic Level */}
+                            <div className="bg-white rounded-2xl shadow-xl p-8 border-2 border-transparent hover:border-green-500 transition">
+                                <div className="text-center mb-6">
+                                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <span className="text-3xl">🎯</span>
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-gray-900 mb-2">Basic</h3>
+                                    <p className="text-sm text-gray-600">Perfect for beginners</p>
+                                </div>
+                                <div className="space-y-3 mb-6 text-sm text-gray-700">
+                                    <div className="flex justify-between">
+                                        <span>Log Lines:</span>
+                                        <span className="font-medium">200</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Threats:</span>
+                                        <span className="font-medium">8</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Time Limit:</span>
+                                        <span className="font-medium">15 minutes</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Difficulty:</span>
+                                        <span className="font-medium text-green-600">Easy</span>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => startChallenge('basic')}
+                                    disabled={loading}
+                                    className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-green-600 hover:to-emerald-700 transition disabled:opacity-50"
+                                >
+                                    {loading ? 'Loading...' : 'Start Basic Challenge'}
+                                </button>
+                            </div>
+
+                            {/* Intermediate Level */}
+                            <div className="bg-white rounded-2xl shadow-xl p-8 border-2 border-transparent hover:border-yellow-500 transition">
+                                <div className="text-center mb-6">
+                                    <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <span className="text-3xl">⚡</span>
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-gray-900 mb-2">Intermediate</h3>
+                                    <p className="text-sm text-gray-600">For experienced analysts</p>
+                                </div>
+                                <div className="space-y-3 mb-6 text-sm text-gray-700">
+                                    <div className="flex justify-between">
+                                        <span>Log Lines:</span>
+                                        <span className="font-medium">500</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Threats:</span>
+                                        <span className="font-medium">12</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Time Limit:</span>
+                                        <span className="font-medium">25 minutes</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Difficulty:</span>
+                                        <span className="font-medium text-yellow-600">Medium</span>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => startChallenge('intermediate')}
+                                    disabled={loading}
+                                    className="w-full bg-gradient-to-r from-yellow-500 to-orange-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-yellow-600 hover:to-orange-700 transition disabled:opacity-50"
+                                >
+                                    {loading ? 'Loading...' : 'Start Intermediate Challenge'}
+                                </button>
+                            </div>
+
+                            {/* Advanced Level */}
+                            <div className="bg-white rounded-2xl shadow-xl p-8 border-2 border-transparent hover:border-red-500 transition">
+                                <div className="text-center mb-6">
+                                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <span className="text-3xl">🔥</span>
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-gray-900 mb-2">Advanced</h3>
+                                    <p className="text-sm text-gray-600">APT detection challenge</p>
+                                </div>
+                                <div className="space-y-3 mb-6 text-sm text-gray-700">
+                                    <div className="flex justify-between">
+                                        <span>Log Lines:</span>
+                                        <span className="font-medium">1000</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Threats:</span>
+                                        <span className="font-medium">18</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Time Limit:</span>
+                                        <span className="font-medium">40 minutes</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Difficulty:</span>
+                                        <span className="font-medium text-red-600">Hard</span>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => startChallenge('advanced')}
+                                    disabled={loading}
+                                    className="w-full bg-gradient-to-r from-red-500 to-pink-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-red-600 hover:to-pink-700 transition disabled:opacity-50"
+                                >
+                                    {loading ? 'Loading...' : 'Start Advanced Challenge'}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Info Section */}
+                        <div className="mt-16 max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8">
+                            <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">What You'll Practice</h3>
+                            <div className="grid md:grid-cols-2 gap-6 text-sm">
+                                <div>
+                                    <p className="font-semibold text-purple-600 mb-2">Skills Developed:</p>
+                                    <ul className="space-y-1 text-gray-700">
+                                        <li>• Log analysis and pattern recognition</li>
+                                        <li>• Threat identification and classification</li>
+                                        <li>• Attack timeline reconstruction</li>
+                                        <li>• Security event correlation</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <p className="font-semibold text-blue-600 mb-2">Threat Types Covered:</p>
+                                    <ul className="space-y-1 text-gray-700">
+                                        <li>• Brute force attacks</li>
+                                        <li>• Port scanning and reconnaissance</li>
+                                        <li>• Malware detection</li>
+                                        <li>• Data exfiltration</li>
+                                        <li>• SQL injection and web attacks</li>
+                                        <li>• Lateral movement</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(React.createElement(LogAnalyzer), document.getElementById('root'));
+    </script>
+</body>
+</html>
