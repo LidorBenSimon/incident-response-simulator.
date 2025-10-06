@@ -1,0 +1,51 @@
+.
+├── README.md
+├── backend
+│   ├── app
+│   │   ├── __init__.py
+│   │   ├── api
+│   │   ├── data
+│   │   ├── main.py
+│   │   ├── main.py.backup
+│   │   ├── models
+│   │   ├── scenarios
+│   │   ├── services
+│   │   └── utils
+│   ├── requirements.txt
+│   └── tests
+├── containers
+│   ├── attacker
+│   │   ├── logs
+│   │   └── web
+│   ├── siem
+│   │   ├── logs
+│   │   └── scripts
+│   └── victim
+│       ├── logs
+│       └── scripts
+├── docker-compose.yml
+├── docker-compose.yml.backup
+├── docs
+├── frontend
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── public
+│   │   ├── dashboard.js
+│   │   ├── dashboard.js.backup
+│   │   ├── dashboard_simple.js
+│   │   ├── index.html
+│   │   ├── index_old.html
+│   │   ├── learning.html
+│   │   ├── log_analyzer.html
+│   │   ├── network_traffic.html
+│   │   ├── quiz.html
+│   │   ├── siem_dashboard.html
+│   │   ├── simulation_dashboard.html
+│   │   └── simulator.html
+│   └── src
+├── logs
+│   └── collector.log
+├── project_structure.txt
+└── scenarios
+
+26 directories, 23 files

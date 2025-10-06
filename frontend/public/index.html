@@ -58,40 +58,57 @@
                 Learn to identify threats, respond to incidents, and protect critical systems.
             </p>
 
-            <!-- Main Action Cards -->
-            <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16">
+            <!-- Main Action Cards - 3 Cards -->
+            <div class="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16">
                 
                 <!-- Learning Module Card -->
-                <div class="card-hover bg-white rounded-2xl shadow-xl p-8 border-2 border-transparent hover:border-indigo-500 cursor-pointer" onclick="window.location.href='learning.html'">
+                <div class="card-hover bg-white rounded-2xl shadow-xl p-8 border-2 border-transparent hover:border-blue-500 cursor-pointer" onclick="window.location.href='learning.html'">
                     <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-6">
                         <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                         </svg>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Learning Before Simulation</h3>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Learning Materials</h3>
                     <p class="text-gray-600 mb-6">
                         Study comprehensive materials about incident response, threat identification, 
-                        and security best practices before diving into simulations.
+                        and security best practices.
                     </p>
                     <button class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition">
                         Start Learning
                     </button>
                 </div>
 
-                <!-- Simulator Card -->
+                <!-- Training Center Card -->
                 <div class="card-hover bg-white rounded-2xl shadow-xl p-8 border-2 border-transparent hover:border-purple-500 cursor-pointer" onclick="window.location.href='simulator.html'">
                     <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mx-auto mb-6">
                         <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Launch Simulation</h3>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">Training Center</h3>
                     <p class="text-gray-600 mb-6">
-                        Jump straight into realistic cyber attack scenarios. Test your skills, 
-                        make decisions under pressure, and get instant feedback.
+                        Practice with interactive simulations, quizzes, and log analysis exercises. 
+                        Get scored and receive feedback.
                     </p>
                     <button class="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-purple-600 hover:to-pink-700 transition">
-                        Start Simulation
+                        Start Training
+                    </button>
+                </div>
+
+                <!-- System Demos Card - NEW -->
+                <div class="card-hover bg-white rounded-2xl shadow-xl p-8 border-2 border-transparent hover:border-green-500 cursor-pointer" onclick="window.location.href='system_demos.html'">
+                    <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center mx-auto mb-6">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">System Demos</h3>
+                    <p class="text-gray-600 mb-6">
+                        Explore interactive demonstrations of real security systems like SIEM and 
+                        network traffic analysis tools.
+                    </p>
+                    <button class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-green-600 hover:to-emerald-700 transition">
+                        View Demos
                     </button>
                 </div>
             </div>

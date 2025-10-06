@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Traffic Analyzer</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .packet-row { font-family: 'Courier New', monospace; font-size: 13px; border-bottom: 1px solid #e5e7eb; transition: background 0.2s; }
+        .packet-row:hover { background: #f3f4f6; }
+        .packet-row.selected { background: #dbeafe; }
+        .packet-row.suspicious { background: #fef3c7; border-left: 3px solid #f59e0b; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const NetworkTrafficAnalyzer = () => {
+            const [packets, setPackets] = useState([]);
+            const [selectedPacket, setSelectedPacket] = useState(null);
+            const [isCapturing, setIsCapturing] = useState(false);
+            const [filterProtocol, setFilterProtocol] = useState('all');
+            const [filterSuspicious, setFilterSuspicious] = useState(false);
+            const [threatsDetected, setThreatsDetected] = useState([]);
+            const [captureStats, setCaptureStats] = useState({
+                total: 0, tcp: 0, udp: 0, http: 0, https: 0, dns: 0, suspicious: 0
+            });
+            const intervalRef = useRef(null);
+            const packetIdCounter = useRef(1);
+
+            const internalIPs = ['192.168.1.10', '192.168.1.15', '10.0.0.5'];
+            const externalIPs = ['8.8.8.8', '1.1.1.1', '142.250.185.46'];
+            const suspiciousIPs = ['45.142.212.61', '185.220.101.34'];
+
+            const generatePacket = (forceThreat = null) => {
+                const protocols = ['TCP', 'UDP', 'HTTP', 'HTTPS', 'DNS'];
+                const protocol = forceThreat?.protocol || protocols[Math.floor(Math.random() * protocols.length)];
+                
+                let srcIP, dstIP, srcPort, dstPort, payload, info, isSuspicious = false, threatType = null;
+
+                if (forceThreat) {
+                    switch(forceThreat.type) {
+                        case 'port_scan':
+                            srcIP = suspiciousIPs[0];
+                            dstIP = internalIPs[0];
+                            srcPort = Math.floor(Math.random() * 65535);
+                            dstPort = 20 + (packetIdCounter.current % 100);
+                            payload = '[SYN]';
+                            info = `Port scan - Sequential SYN to port ${dstPort}`;
+                            isSuspicious = true;
+                            threatType = 'Port Scan';
+                            break;
+                        case 'dns_tunneling':
+                            srcIP = internalIPs[1];
+                            dstIP = '8.8.8.8';
+                            srcPort = 50000;
+                            dstPort = 53;
+                            payload = `DNS Query: ${Math.random().toString(36).substring(2)}.malicious-c2.com`;
+                            info = 'DNS tunneling - Abnormal subdomain';
+                            isSuspicious = true;
+                            threatType = 'DNS Tunneling';
+                            break;
+                        case 'c2_beacon':
+                            srcIP = internalIPs[0];
+                            dstIP = suspiciousIPs[1];
+                            srcPort = 50001;
+                            dstPort = 443;
+                            payload = 'POST /api/check [Encrypted]';
+                            info = 'C2 beaconing - Periodic connection';
+                            isSuspicious = true;
+                            threatType = 'C2 Communication';
+                            break;
+                    }
+                } else {
+                    srcIP = Math.random() > 0.5 ? internalIPs[Math.floor(Math.random() * internalIPs.length)] : externalIPs[Math.floor(Math.random() * externalIPs.length)];
+                    dstIP = Math.random() > 0.5 ? externalIPs[Math.floor(Math.random() * externalIPs.length)] : internalIPs[Math.floor(Math.random() * internalIPs.length)];
+                    srcPort = Math.floor(Math.random() * 50000) + 10000;
+                    
+                    if (protocol === 'HTTP') {
+                        dstPort = 80;
+                        payload = 'GET /api/data HTTP/1.1';
+                        info = 'HTTP request';
+                    } else if (protocol === 'HTTPS') {
+                        dstPort = 443;
+                        payload = 'TLS: Client Hello';
+                        info = 'HTTPS connection';
+                    } else if (protocol === 'DNS') {
+                        dstPort = 53;
+                        payload = 'DNS Query: www.google.com';
+                        info = 'DNS query';
+                    } else {
+                        dstPort = [22, 3306, 8080][Math.floor(Math.random() * 3)];
+                        payload = '[SYN, ACK]';
+                        info = `${protocol} connection`;
+                    }
+                }
+
+                return {
+                    id: packetIdCounter.current++,
+                    timestamp: new Date().toISOString(),
+                    protocol, srcIP, dstIP, srcPort, dstPort,
+                    length: Math.floor(Math.random() * 1400) + 60,
+                    payload, info, isSuspicious, threatType
+                };
+            };
+
+            const threatScenarios = [
+                { type: 'port_scan', protocol: 'TCP', interval: 100 },
+                { type: 'dns_tunneling', protocol: 'DNS', interval: 3000 },
+                { type: 'c2_beacon', protocol: 'HTTPS', interval: 5000 }
+            ];
+
+            useEffect(() => {
+                if (isCapturing) {
+                    intervalRef.current = setInterval(() => {
+                        const newPacket = generatePacket();
+                        setPackets(prev => [newPacket, ...prev].slice(0, 500));
+                        updateStats(newPacket);
+                    }, 300);
+
+                    const threatIntervals = threatScenarios.map(scenario => 
+                        setInterval(() => {
+                            const threatPacket = generatePacket(scenario);
+                            setPackets(prev => [threatPacket, ...prev].slice(0, 500));
+                            updateStats(threatPacket);
+                            if (threatPacket.isSuspicious) {
+                                setThreatsDetected(prev => [...prev, {
+                                    id: threatPacket.id,
+                                    type: threatPacket.threatType,
+                                    timestamp: threatPacket.timestamp,
+                                    details: threatPacket.info
+                                }].slice(0, 50));
+                            }
+                        }, scenario.interval)
+                    );
+
+                    return () => {
+                        if (intervalRef.current) clearInterval(intervalRef.current);
+                        threatIntervals.forEach(interval => clearInterval(interval));
+                    };
+                }
+            }, [isCapturing]);
+
+            const updateStats = (packet) => {
+                setCaptureStats(prev => ({
+                    total: prev.total + 1,
+                    tcp: prev.tcp + (packet.protocol === 'TCP' ? 1 : 0),
+                    udp: prev.udp + (packet.protocol === 'UDP' ? 1 : 0),
+                    http: prev.http + (packet.protocol === 'HTTP' ? 1 : 0),
+                    https: prev.https + (packet.protocol === 'HTTPS' ? 1 : 0),
+                    dns: prev.dns + (packet.protocol === 'DNS' ? 1 : 0),
+                    suspicious: prev.suspicious + (packet.isSuspicious ? 1 : 0)
+                }));
+            };
+
+            const toggleCapture = () => {
+                setIsCapturing(!isCapturing);
+                if (isCapturing) {
+                    setPackets([]);
+                    setThreatsDetected([]);
+                    setCaptureStats({ total: 0, tcp: 0, udp: 0, http: 0, https: 0, dns: 0, suspicious: 0 });
+                    packetIdCounter.current = 1;
+                }
+            };
+
+            const filteredPackets = packets.filter(packet => {
+                const matchesProtocol = filterProtocol === 'all' || packet.protocol === filterProtocol;
+                const matchesSuspicious = !filterSuspicious || packet.isSuspicious;
+                return matchesProtocol && matchesSuspicious;
+            });
+
+            return (
+                <div className="min-h-screen bg-gray-100">
+                    <div className="bg-white border-b border-gray-300 px-6 py-4 shadow">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-4">
+                                <a href="index.html" className="text-blue-600">← Home</a>
+                                <h1 className="text-2xl font-bold">Network Traffic Analyzer</h1>
+                                <span className={`px-3 py-1 rounded text-sm ${isCapturing ? 'bg-green-100 text-green-800' : 'bg-gray-100'}`}>
+                                    {isCapturing ? '● CAPTURING' : '○ STOPPED'}
+                                </span>
+                            </div>
+                            <div className="flex items-center space-x-6">
+                                <div className="text-sm"><span className="text-gray-600">Packets:</span> <span className="font-bold">{captureStats.total}</span></div>
+                                <div className="text-sm"><span className="text-gray-600">Threats:</span> <span className="font-bold text-red-600">{captureStats.suspicious}</span></div>
+                                <button onClick={toggleCapture} className={`px-6 py-2 rounded-lg font-medium ${isCapturing ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white`}>
+                                    {isCapturing ? 'Stop' : 'Start'} Capture
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-6">
+                        <div className="grid grid-cols-3 gap-6 mb-6">
+                            <div className="bg-white rounded-lg p-6 shadow">
+                                <h3 className="text-lg font-semibold mb-4">Statistics</h3>
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between"><span>Total:</span><span className="font-bold">{captureStats.total}</span></div>
+                                    <div className="flex justify-between"><span>TCP:</span><span className="font-bold text-blue-600">{captureStats.tcp}</span></div>
+                                    <div className="flex justify-between"><span>UDP:</span><span className="font-bold text-purple-600">{captureStats.udp}</span></div>
+                                    <div className="flex justify-between"><span>HTTP/S:</span><span className="font-bold text-green-600">{captureStats.http + captureStats.https}</span></div>
+                                    <div className="flex justify-between"><span>DNS:</span><span className="font-bold text-yellow-600">{captureStats.dns}</span></div>
+                                    <div className="flex justify-between border-t pt-2"><span>Suspicious:</span><span className="font-bold text-red-600">{captureStats.suspicious}</span></div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white rounded-lg p-6 shadow col-span-2">
+                                <h3 className="text-lg font-semibold mb-4">Recent Threats</h3>
+                                <div className="space-y-2 max-h-48 overflow-y-auto">
+                                    {threatsDetected.length === 0 && <div className="text-center text-gray-500 py-8">No threats detected</div>}
+                                    {threatsDetected.slice(0, 5).map(threat => (
+                                        <div key={threat.id} className="p-2 bg-red-50 border-l-4 border-red-500 text-sm">
+                                            <div className="font-semibold text-red-800">{threat.type}</div>
+                                            <div className="text-gray-600 text-xs">{threat.details}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-lg p-4 shadow mb-6">
+                            <div className="flex items-center space-x-4">
+                                <label className="text-sm font-medium">Filter:</label>
+                                <select value={filterProtocol} onChange={(e) => setFilterProtocol(e.target.value)} className="px-4 py-2 border rounded">
+                                    <option value="all">All Protocols</option>
+                                    <option value="TCP">TCP</option>
+                                    <option value="UDP">UDP</option>
+                                    <option value="HTTP">HTTP</option>
+                                    <option value="HTTPS">HTTPS</option>
+                                    <option value="DNS">DNS</option>
+                                </select>
+                                <label className="flex items-center">
+                                    <input type="checkbox" checked={filterSuspicious} onChange={(e) => setFilterSuspicious(e.target.checked)} className="mr-2" />
+                                    <span className="text-sm">Show only suspicious</span>
+                                </label>
+                                <div className="flex-1"></div>
+                                <div className="text-sm text-gray-600">Showing {filteredPackets.length} packets</div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-lg shadow overflow-hidden">
+                            <table className="w-full">
+                                <thead className="bg-gray-50 border-b-2">
+                                    <tr>
+                                        <th className="px-4 py-3 text-left text-xs font-medium uppercase">No.</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium uppercase">Time</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium uppercase">Source</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium uppercase">Destination</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium uppercase">Protocol</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium uppercase">Length</th>
+                                        <th className="px-4 py-3 text-left text-xs font-medium uppercase">Info</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredPackets.length === 0 && (
+                                        <tr><td colSpan="7" className="px-4 py-12 text-center text-gray-500">
+                                            {isCapturing ? 'Waiting for packets...' : 'Click "Start Capture"'}
+                                        </td></tr>
+                                    )}
+                                    {filteredPackets.map(packet => (
+                                        <tr key={packet.id} className={`packet-row cursor-pointer ${selectedPacket?.id === packet.id ? 'selected' : ''} ${packet.isSuspicious ? 'suspicious' : ''}`} onClick={() => setSelectedPacket(packet)}>
+                                            <td className="px-4 py-2 text-sm">{packet.id}</td>
+                                            <td className="px-4 py-2 text-sm">{new Date(packet.timestamp).toLocaleTimeString()}</td>
+                                            <td className="px-4 py-2 text-sm">{packet.srcIP}:{packet.srcPort}</td>
+                                            <td className="px-4 py-2 text-sm">{packet.dstIP}:{packet.dstPort}</td>
+                                            <td className="px-4 py-2 text-sm">
+                                                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                                    packet.protocol === 'TCP' ? 'bg-blue-100 text-blue-800' :
+                                                    packet.protocol === 'UDP' ? 'bg-purple-100 text-purple-800' :
+                                                    packet.protocol === 'HTTP' ? 'bg-green-100 text-green-800' :
+                                                    packet.protocol === 'HTTPS' ? 'bg-teal-100 text-teal-800' :
+                                                    'bg-yellow-100 text-yellow-800'
+                                                }`}>{packet.protocol}</span>
+                                            </td>
+                                            <td className="px-4 py-2 text-sm">{packet.length}</td>
+                                            <td className="px-4 py-2 text-sm text-gray-600">{packet.info}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {selectedPacket && (
+                            <div className="mt-6 bg-white rounded-lg shadow p-6">
+                                <div className="flex justify-between mb-4">
+                                    <h3 className="text-lg font-semibold">Packet #{selectedPacket.id}</h3>
+                                    {selectedPacket.isSuspicious && <span className="px-3 py-1 bg-red-100 text-red-800 rounded font-semibold">⚠️ {selectedPacket.threatType}</span>}
+                                </div>
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="space-y-2 text-sm">
+                                        <div><span className="text-gray-600">Protocol:</span> <span className="font-mono">{selectedPacket.protocol}</span></div>
+                                        <div><span className="text-gray-600">Source:</span> <span className="font-mono">{selectedPacket.srcIP}:{selectedPacket.srcPort}</span></div>
+                                        <div><span className="text-gray-600">Destination:</span> <span className="font-mono">{selectedPacket.dstIP}:{selectedPacket.dstPort}</span></div>
+                                        <div><span className="text-gray-600">Length:</span> <span className="font-mono">{selectedPacket.length} bytes</span></div>
+                                    </div>
+                                    <div>
+                                        <h4 className="font-semibold mb-2">Payload</h4>
+                                        <div className="bg-gray-50 p-3 rounded font-mono text-xs">{selectedPacket.payload}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(React.createElement(NetworkTrafficAnalyzer), document.getElementById('root'));
+    </script>
+</body>
+</html>
