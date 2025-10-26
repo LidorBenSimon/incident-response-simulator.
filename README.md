@@ -719,3 +719,125 @@ For questions or issues:
 ---
 
 **⚠️ Disclaimer:** This platform is for educational purposes only. Do not use techniques learned here for unauthorized access to systems. Always practice ethical hacking and obtain proper authorization before testing security systems.
+
+
+---
+
+## Labs & Exercises (added)
+
+This project includes interactive learning labs and attack exercises implemented in the `frontend/public` pages and in the `containers/` images. I inspected the repository and found the following practical exercises and attacker pages — they are ready-to-use and documented briefly here so users can run them and learn safely.
+
+### 1) Password Cracking Lab (`frontend/public/password_cracking.html`, `hashcrack_lab` service)
+**What it is:** a hands-on lab that demonstrates password hashing and cracking techniques. The lab contains sample hash files and a wordlist (e.g. `rockyou.txt`) mounted into the `hashcrack_lab` container.  
+**Learning goals:**
+- Understand common hash algorithms (MD5, SHA1, SHA256) and why salts matter.
+- Practice using wordlists and offline cracking tools (e.g., `john`, `hashcat`) to recover weak passwords.
+- Learn defensive lessons: password policies, hashing with salt & stretching.
+
+**How to use:**
+1. Start the environment (see *Run the simulator* below).
+2. Open the Password Cracking page in your browser — the frontend HTML file is `frontend/public/password_cracking.html`. The project may serve the frontend statically; if using the provided `package.json` dev script it can also be served with `python3 -m http.server 3000` from the `frontend` directory.
+3. Inside the container `hashcrack_lab` you will find `/wordlists/rockyou.txt` and sample hashes under `/hashes/`. Try cracking with your preferred tool or follow the on-page instructions.
+
+> Note: The lab is intentionally educational — it uses sample, non-sensitive data.
+
+---
+
+### 2) Privilege Escalation Lab (`frontend/public/privilege_escalation.html`, `privesc_lab` service)
+**What it is:** a simulated Linux victim that contains intentional misconfigurations (SUID binaries, weak sudo rules, leftover credentials) to teach privilege escalation techniques.  
+**Learning goals:**
+- Identify common privilege escalation vectors on Linux.
+- Practice safe exploitation in a containerized lab environment.
+- Learn to remediate issues (remove SUID bits, tighten sudoers, update packages).
+
+**How to use:**
+1. Start the environment (see *Run the simulator* below).
+2. Access the Privilege Escalation page: `frontend/public/privilege_escalation.html`.
+3. Connect to the `privesc_lab` container (e.g., `docker exec -it <privesc_container> bash`) and follow the steps on the page to practice enumerating the system and exploiting misconfigurations.
+
+---
+
+### 3) Phishing / Attacker Pages (`containers/attacker/web/*.html`)
+**What it is:** small static pages used to demonstrate phishing tactics and credential-harvesting techniques (fake login pages). These files are in `containers/attacker/web/` and are intentionally simple educational examples (e.g. `fake_login.html`).  
+**Learning goals:**
+- Recognize social-engineering patterns in phishing pages (urgency, spoofed UI).
+- Learn how credential harvesting works and how logs may show attempted credential submissions.
+- Understand defenses: email filtering, URL inspection, 2FA, user training.
+
+**Important:** These pages are for training only. Do **not** use them against real targets or on public-facing systems without authorization.
+
+---
+
+## Learning Pages (`frontend/public/learning.html`)
+
+A self-contained learning center page (`frontend/public/learning.html`) provides written background on key topics such as:
+- Incident response process and playbooks.
+- Common attack techniques (reconnaissance, exploitation, persistence).
+- Defensive controls and mitigation best practices.
+- Career paths and how to progress from SOC analyst → pentester etc.
+
+These pages are best viewed in a browser. They are static React-based pages bundled in `frontend/public/`.
+
+---
+
+## How to run the simulator (recommended)
+
+This repository includes a `docker-compose.yml` that builds and runs the simulated environment (victim, attacker, labs, logging). The project assumes you have Docker and Docker Compose installed.
+
+1. Clone the repo (or extract the provided ZIP) and change directory:
+```bash
+cd incident-response-simulator.-main
+```
+
+2. Build and run all services:
+```bash
+docker-compose up --build
+```
+This command will create the containers defined in `docker-compose.yml` (for example: `victim_workstation`, `hashcrack_lab`, `privesc_lab`, `attacker_server`, `log_collector`). The compose file also declares a bridge network `ir_network` so containers can communicate.
+
+3. Check ports and endpoints:
+- The victim workstation web UI is typically mapped to port **8080** (see `docker-compose.yml` for exact mappings).
+- A static frontend or attacker web server may be mapped to other ports (check the `ports:` sections in `docker-compose.yml`). You can confirm actual host ports with:
+```bash
+docker-compose ps
+```
+or
+```bash
+docker ps --format "table {.Names}\t{.Ports}"
+```
+
+4. Access the learning pages and labs:
+- Open the Password Cracking lab page: `frontend/public/password_cracking.html` served from the frontend host or via `http://localhost:8080/password_cracking.html` depending on your configuration.
+- Open the Privilege Escalation lab page: `frontend/public/privilege_escalation.html`.
+- Open the Learning Center: `frontend/public/learning.html`.
+
+If you prefer to serve the frontend locally without Docker:
+```bash
+cd frontend
+# quick static server (already included in package.json)
+python3 -m http.server 3000
+# then browse http://localhost:3000/password_cracking.html
+```
+
+---
+
+## Security & Usage Notice
+
+This repository is meant for **learning in a controlled environment** only. Never run these labs in a production environment or against systems you do not own/are not authorized to test. Always follow institutional and legal rules when performing security exercises.
+
+---
+
+## Troubleshooting tips
+
+- If Docker fails to start a service, inspect logs:
+```bash
+docker-compose logs <service_name>
+```
+- If a page doesn't load, confirm host port mappings with `docker ps`.
+- If wordlists or sample hashes are missing, inspect the container volumes and the `hashes/` and `wordlists/` folders.
+
+---
+
+## Short GitHub description (for "About" / repo short description)
+
+**Incident Response Simulator — hands-on cybersecurity training platform with password‑cracking, privilege‑escalation and phishing exercises, designed for safe learning and teaching.**
