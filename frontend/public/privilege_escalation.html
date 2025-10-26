@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privilege Escalation Challenge - IR Simulator</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .terminal {
+            font-family: 'Courier New', monospace;
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 8px;
+            min-height: 400px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .terminal-input {
+            background: transparent;
+            border: none;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            outline: none;
+            width: calc(100% - 100px);
+        }
+        .terminal-line {
+            margin-bottom: 4px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .command { color: #00ff00; }
+        .output { color: #d4d4d4; }
+        .error { color: #ff6b6b; }
+        .success { color: #51cf66; }
+        .warning { color: #ffd43b; }
+        .prompt { color: #4dabf7; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const PrivilegeEscalationChallenge = () => {
+            const [stage, setStage] = useState('intro');
+            const [acceptedEthics, setAcceptedEthics] = useState(false);
+            const [labRunning, setLabRunning] = useState(false);
+            const [terminalHistory, setTerminalHistory] = useState([]);
+            const [currentCommand, setCurrentCommand] = useState('');
+            const [commandHistory, setCommandHistory] = useState([]);
+            const [historyIndex, setHistoryIndex] = useState(-1);
+            const [loading, setLoading] = useState(false);
+            const [flagFound, setFlagFound] = useState(false);
+            const [isRoot, setIsRoot] = useState(false);
+            const [startTime, setStartTime] = useState(null);
+            const [hintsUsed, setHintsUsed] = useState(0);
+            const [score, setScore] = useState(null);
+            const terminalRef = useRef(null);
+            const inputRef = useRef(null);
+
+            const API_BASE = 'http://localhost:8000';
+
+            useEffect(() => {
+                if (terminalRef.current) {
+                    terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+                }
+            }, [terminalHistory]);
+
+            const startLab = async () => {
+                setLoading(true);
+                try {
+                    const response = await fetch(`${API_BASE}/privilege-escalation/start`, {
+                        method: 'POST'
+                    });
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        setLabRunning(true);
+                        setStartTime(Date.now());
+                        setStage('challenge');
+                        setTerminalHistory([
+                            { type: 'success', text: '=== Privilege Escalation Lab Started ===' },
+                            { type: 'output', text: `Welcome to vulnerable-server` },
+                            { type: 'output', text: `Login: ${data.username} / ${data.password}` },
+                            { type: 'output', text: '' },
+                            { type: 'warning', text: 'OBJECTIVE: Escalate privileges to root and find the flag in /root/flag.txt' },
+                            { type: 'output', text: 'Type "help" for available commands or "hint" for guidance' },
+                            { type: 'output', text: '' }
+                        ]);
+                    } else {
+                        alert(`Error starting lab: ${data.message}`);
+                    }
+                } catch (error) {
+                    alert(`Error: ${error.message}`);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const executeCommand = async (cmd) => {
+                if (!cmd.trim()) return;
+
+                // Add command to history
+                setCommandHistory(prev => [...prev, cmd]);
+                setHistoryIndex(-1);
+
+                // Add command to terminal
+                setTerminalHistory(prev => [...prev, 
+                    { type: 'prompt', text: `lowpriv@vulnerable-server:~$ ${cmd}` }
+                ]);
+
+                // Handle built-in commands
+                if (cmd === 'help') {
+                    setTerminalHistory(prev => [...prev,
+                        { type: 'output', text: 'Available commands:' },
+                        { type: 'output', text: '  help     - Show this help message' },
+                        { type: 'output', text: '  hint     - Get a hint for the challenge' },
+                        { type: 'output', text: '  clear    - Clear terminal screen' },
+                        { type: 'output', text: '  submit   - Submit flag (submit FLAG{...})' },
+                        { type: 'output', text: '' },
+                        { type: 'output', text: 'Common Linux commands:' },
+                        { type: 'output', text: '  ls, cd, pwd, cat, find, sudo, whoami, id, etc.' },
+                        { type: 'output', text: '' }
+                    ]);
+                    return;
+                }
+
+                if (cmd === 'clear') {
+                    setTerminalHistory([]);
+                    return;
+                }
+
+                if (cmd.startsWith('hint')) {
+                    const hintNum = hintsUsed + 1;
+                    if (hintNum > 5) {
+                        setTerminalHistory(prev => [...prev,
+                            { type: 'warning', text: 'No more hints available!' }
+                        ]);
+                        return;
+                    }
+                    
+                    try {
+                        const response = await fetch(`${API_BASE}/privilege-escalation/hint/${hintNum}`);
+                        const data = await response.json();
+                        
+                        if (data.status === 'success') {
+                            setHintsUsed(hintNum);
+                            setTerminalHistory(prev => [...prev,
+                                { type: 'warning', text: `=== HINT ${hintNum}: ${data.hint.title} ===` },
+                                { type: 'output', text: data.hint.hint },
+                                { type: 'output', text: 'Suggested commands:' },
+                                ...data.hint.commands.map(c => ({ type: 'output', text: `  ${c}` })),
+                                { type: 'output', text: '' }
+                            ]);
+                        }
+                    } catch (error) {
+                        setTerminalHistory(prev => [...prev,
+                            { type: 'error', text: `Error fetching hint: ${error.message}` }
+                        ]);
+                    }
+                    return;
+                }
+
+                if (cmd.startsWith('submit ')) {
+                    const flag = cmd.substring(7).trim();
+                    submitFlag(flag);
+                    return;
+                }
+
+                // Execute command on server
+                setLoading(true);
+                try {
+                    const response = await fetch(`${API_BASE}/privilege-escalation/execute`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ command: cmd })
+                    });
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        const outputLines = data.output.split('\n').map(line => 
+                            ({ type: 'output', text: line })
+                        );
+                        setTerminalHistory(prev => [...prev, ...outputLines]);
+                        
+                        if (data.flag_found && !flagFound) {
+                            setFlagFound(true);
+                            setTerminalHistory(prev => [...prev,
+                                { type: 'success', text: '' },
+                                { type: 'success', text: '════════════════════════════════════════' },
+                                { type: 'success', text: '🎉 CONGRATULATIONS! FLAG FOUND!' },
+                                { type: 'success', text: '════════════════════════════════════════' },
+                                { type: 'output', text: 'Copy the flag and submit it with:' },
+                                { type: 'command', text: 'submit FLAG{your_flag_here}' },
+                                { type: 'success', text: '════════════════════════════════════════' },
+                                { type: 'output', text: '' }
+                            ]);
+                        }
+                        
+                        if (data.is_root && !isRoot) {
+                            setIsRoot(true);
+                            setTerminalHistory(prev => [...prev,
+                                { type: 'success', text: '' },
+                                { type: 'success', text: '🔓 ROOT ACCESS ACHIEVED!' },
+                                { type: 'warning', text: 'Now find the flag in /root/flag.txt' },
+                                { type: 'output', text: '' }
+                            ]);
+                        }
+                    } else {
+                        setTerminalHistory(prev => [...prev,
+                            { type: 'error', text: data.message || 'Command execution failed' }
+                        ]);
+                    }
+                } catch (error) {
+                    setTerminalHistory(prev => [...prev,
+                        { type: 'error', text: `Error: ${error.message}` }
+                    ]);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const submitFlag = async (flag) => {
+                const timeTaken = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
+                
+                try {
+                    const response = await fetch(`${API_BASE}/privilege-escalation/submit-flag`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            flag: flag,
+                            time_taken: timeTaken,
+                            hints_used: hintsUsed
+                        })
+                    });
+                    const data = await response.json();
+                    
+                    if (data.correct) {
+                        setScore(data);
+                        setStage('results');
+                    } else {
+                        setTerminalHistory(prev => [...prev,
+                            { type: 'error', text: '❌ Incorrect flag! Try again.' },
+                            { type: 'output', text: '' }
+                        ]);
+                    }
+                } catch (error) {
+                    setTerminalHistory(prev => [...prev,
+                        { type: 'error', text: `Error submitting flag: ${error.message}` }
+                    ]);
+                }
+            };
+
+            const handleKeyDown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    executeCommand(currentCommand);
+                    setCurrentCommand('');
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (commandHistory.length > 0) {
+                        const newIndex = historyIndex + 1;
+                        if (newIndex < commandHistory.length) {
+                            setHistoryIndex(newIndex);
+                            setCurrentCommand(commandHistory[commandHistory.length - 1 - newIndex]);
+                        }
+                    }
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (historyIndex > 0) {
+                        const newIndex = historyIndex - 1;
+                        setHistoryIndex(newIndex);
+                        setCurrentCommand(commandHistory[commandHistory.length - 1 - newIndex]);
+                    } else {
+                        setHistoryIndex(-1);
+                        setCurrentCommand('');
+                    }
+                }
+            };
+
+            // INTRO STAGE
+            if (stage === 'intro') {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 p-6">
+                        <div className="max-w-4xl mx-auto">
+                            <nav className="bg-white rounded-lg shadow-sm px-6 py-4 mb-8">
+                                <div className="flex justify-between items-center">
+                                    <h1 className="text-2xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
+                                        Privilege Escalation Challenge
+                                    </h1>
+                                    <a href="simulator.html" className="px-4 py-2 text-gray-700 hover:text-gray-900 transition">
+                                        ← Back to Training
+                                    </a>
+                                </div>
+                            </nav>
+
+                            <div className="bg-white rounded-2xl shadow-xl p-8 mb-6">
+                                <div className="flex items-center justify-center mb-6">
+                                    <div className="w-20 h-20 bg-gradient-to-br from-red-500 to-orange-600 rounded-full flex items-center justify-center">
+                                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <h2 className="text-3xl font-bold text-center text-gray-900 mb-4">
+                                    Linux Privilege Escalation Lab
+                                </h2>
+                                <p className="text-center text-gray-600 mb-8">
+                                    Real Linux container environment - practice actual privilege escalation techniques
+                                </p>
+
+                                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+                                    <h3 className="font-semibold text-blue-900 mb-2">What You'll Practice:</h3>
+                                    <ul className="space-y-2 text-sm text-blue-800">
+                                        <li>• Finding and exploiting SUID binaries</li>
+                                        <li>• Linux enumeration techniques</li>
+                                        <li>• Identifying misconfigured file permissions</li>
+                                        <li>• Real Linux command-line interaction</li>
+                                        <li>• Post-exploitation techniques</li>
+                                    </ul>
+                                </div>
+
+                                <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                                    <h3 className="font-semibold text-gray-900 mb-4">Scenario:</h3>
+                                    <p className="text-gray-700 mb-3">
+                                        You've gained initial access to a Linux server with a low-privilege account 
+                                        during an <strong>authorized</strong> penetration test.
+                                    </p>
+                                    <p className="text-gray-700">
+                                        Your objective: Escalate privileges to root and retrieve the flag from /root/flag.txt
+                                    </p>
+                                </div>
+
+                                <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-6 mb-6">
+                                    <div className="flex items-start">
+                                        <svg className="w-6 h-6 text-yellow-600 mr-3 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                        </svg>
+                                        <div>
+                                            <h3 className="font-bold text-yellow-900 mb-2">CRITICAL ETHICAL AND LEGAL NOTICE</h3>
+                                            <div className="text-sm text-yellow-900 space-y-2">
+                                                <p className="font-semibold">This is a CONTROLLED LEARNING ENVIRONMENT.</p>
+                                                <p><strong>YOU MUST UNDERSTAND:</strong></p>
+                                                <ul className="list-disc ml-5 space-y-1">
+                                                    <li>Unauthorized privilege escalation is <strong>ILLEGAL</strong></li>
+                                                    <li>Testing on systems without written authorization = <strong>CRIMINAL ACT</strong></li>
+                                                    <li>This lab runs in an isolated Docker container</li>
+                                                    <li>Real-world testing requires explicit permission and legal contracts</li>
+                                                    <li>Violations can result in imprisonment and criminal records</li>
+                                                </ul>
+                                                <p className="font-semibold mt-3">
+                                                    By proceeding, you acknowledge that you will ONLY use these techniques in:
+                                                    authorized penetration tests, personal systems you own, or educational labs 
+                                                    with explicit permission.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-center mb-6">
+                                    <label className="flex items-center cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            checked={acceptedEthics}
+                                            onChange={(e) => setAcceptedEthics(e.target.checked)}
+                                            className="w-5 h-5 mr-3"
+                                        />
+                                        <span className="text-gray-900 font-medium">
+                                            I understand and agree to the ethical and legal restrictions
+                                        </span>
+                                    </label>
+                                </div>
+
+                                <button
+                                    onClick={startLab}
+                                    disabled={!acceptedEthics || loading}
+                                    className={`w-full py-4 rounded-lg font-bold text-lg transition ${
+                                        acceptedEthics && !loading
+                                            ? 'bg-gradient-to-r from-red-500 to-orange-600 text-white hover:from-red-600 hover:to-orange-700' 
+                                            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                    }`}
+                                >
+                                    {loading ? 'Starting Lab...' : acceptedEthics ? 'Launch Lab Environment' : 'Please Accept Terms to Continue'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // CHALLENGE STAGE
+            if (stage === 'challenge') {
+                return (
+                    <div className="min-h-screen bg-gray-900 p-6">
+                        <div className="max-w-7xl mx-auto">
+                            <nav className="bg-gray-800 rounded-lg shadow-lg px-6 py-4 mb-6">
+                                <div className="flex justify-between items-center">
+                                    <h1 className="text-2xl font-bold text-white">Privilege Escalation Lab</h1>
+                                    <div className="flex items-center space-x-4">
+                                        <div className="text-sm text-gray-300">
+                                            <span>Hints Used:</span>
+                                            <span className="ml-2 font-bold text-yellow-400">{hintsUsed}/5</span>
+                                        </div>
+                                        {isRoot && (
+                                            <span className="px-3 py-1 bg-green-600 text-white rounded-full text-sm font-semibold">
+                                                ROOT ACCESS
+                                            </span>
+                                        )}
+                                        {flagFound && (
+                                            <span className="px-3 py-1 bg-purple-600 text-white rounded-full text-sm font-semibold">
+                                                FLAG FOUND
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </nav>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                                {/* Terminal */}
+                                <div className="lg:col-span-3">
+                                    <div className="bg-gray-800 rounded-lg shadow-xl overflow-hidden">
+                                        <div className="bg-gray-700 px-4 py-2 flex items-center justify-between">
+                                            <div className="flex items-center space-x-2">
+                                                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                                                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                                                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                                                <span className="ml-4 text-gray-300 text-sm font-mono">
+                                                    lowpriv@vulnerable-server:~
+                                                </span>
+                                            </div>
+                                            <button
+                                                onClick={() => setTerminalHistory([])}
+                                                className="text-gray-400 hover:text-white text-sm"
+                                            >
+                                                Clear
+                                            </button>
+                                        </div>
+                                        
+                                        <div 
+                                            ref={terminalRef}
+                                            className="terminal"
+                                            onClick={() => inputRef.current?.focus()}
+                                        >
+                                            {terminalHistory.map((line, index) => (
+                                                <div key={index} className={`terminal-line ${line.type}`}>
+                                                    {line.text}
+                                                </div>
+                                            ))}
+                                            
+                                            {!loading && (
+                                                <div className="flex items-center">
+                                                    <span className="prompt">lowpriv@vulnerable-server:~$ </span>
+                                                    <input
+                                                        ref={inputRef}
+                                                        type="text"
+                                                        value={currentCommand}
+                                                        onChange={(e) => setCurrentCommand(e.target.value)}
+                                                        onKeyDown={handleKeyDown}
+                                                        className="terminal-input"
+                                                        autoFocus
+                                                        disabled={loading}
+                                                    />
+                                                </div>
+                                            )}
+                                            
+                                            {loading && (
+                                                <div className="terminal-line output">Executing command...</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Sidebar */}
+                                <div className="space-y-6">
+                                    <div className="bg-gray-800 rounded-lg shadow-xl p-6">
+                                        <h3 className="text-lg font-bold text-white mb-4">Objective</h3>
+                                        <div className="space-y-3 text-sm">
+                                            <div className={`flex items-start ${isRoot ? 'text-green-400' : 'text-gray-400'}`}>
+                                                <svg className="w-5 h-5 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                </svg>
+                                                <span>Escalate to root</span>
+                                            </div>
+                                            <div className={`flex items-start ${flagFound ? 'text-green-400' : 'text-gray-400'}`}>
+                                                <svg className="w-5 h-5 mr-2 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                                </svg>
+                                                <span>Find flag in /root/flag.txt</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-gray-800 rounded-lg shadow-xl p-6">
+                                        <h3 className="text-lg font-bold text-white mb-4">Quick Commands</h3>
+                                        <div className="space-y-2 text-sm">
+                                            <button
+                                                onClick={() => setCurrentCommand('help')}
+                                                className="w-full text-left px-3 py-2 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 transition font-mono"
+                                            >
+                                                help
+                                            </button>
+                                            <button
+                                                onClick={() => setCurrentCommand('hint')}
+                                                className="w-full text-left px-3 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition font-mono"
+                                            >
+                                                hint
+                                            </button>
+                                            <button
+                                                onClick={() => setCurrentCommand('whoami')}
+                                                className="w-full text-left px-3 py-2 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 transition font-mono"
+                                            >
+                                                whoami
+                                            </button>
+                                            <button
+                                                onClick={() => setCurrentCommand('sudo -l')}
+                                                className="w-full text-left px-3 py-2 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 transition font-mono"
+                                            >
+                                                sudo -l
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-blue-900 bg-opacity-50 rounded-lg p-4">
+                                        <h3 className="text-sm font-semibold text-blue-200 mb-2">Tips</h3>
+                                        <ul className="text-xs text-blue-100 space-y-1">
+                                            <li>• Use Up/Down arrows for command history</li>
+                                            <li>• Type "hint" for guidance</li>
+                                            <li>• Common privesc vectors: SUID, sudo, file permissions</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // RESULTS STAGE
+            if (stage === 'results') {
+                const timeTaken = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
+                const minutes = Math.floor(timeTaken / 60);
+                const seconds = timeTaken % 60;
+
+                let grade = 'F';
+                if (score.score >= 140) grade = 'A';
+                else if (score.score >= 120) grade = 'B';
+                else if (score.score >= 100) grade = 'C';
+                else if (score.score >= 80) grade = 'D';
+
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-6">
+                        <div className="max-w-5xl mx-auto">
+                            <nav className="bg-white rounded-lg shadow-sm px-6 py-4 mb-8">
+                                <div className="flex justify-between items-center">
+                                    <h1 className="text-2xl font-bold text-gray-900">Challenge Complete!</h1>
+                                    <div className="flex space-x-3">
+                                        <a href="simulator.html" className="px-4 py-2 text-gray-700 hover:text-gray-900">
+                                            Back to Training
+                                        </a>
+                                        <button
+                                            onClick={() => window.location.reload()}
+                                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                        >
+                                            Try Again
+                                        </button>
+                                    </div>
+                                </div>
+                            </nav>
+
+                            <div className="bg-white rounded-2xl shadow-xl p-8 mb-6">
+                                <div className="text-center mb-8">
+                                    <div className={`inline-block w-24 h-24 rounded-full flex items-center justify-center mb-4 ${
+                                        grade === 'A' ? 'bg-green-100' :
+                                        grade === 'B' ? 'bg-blue-100' :
+                                        grade === 'C' ? 'bg-yellow-100' :
+                                        'bg-red-100'
+                                    }`}>
+                                        <span className={`text-5xl font-bold ${
+                                            grade === 'A' ? 'text-green-600' :
+                                            grade === 'B' ? 'text-blue-600' :
+                                            grade === 'C' ? 'text-yellow-600' :
+                                            'text-red-600'
+                                        }`}>
+                                            {grade}
+                                        </span>
+                                    </div>
+                                    <h2 className="text-3xl font-bold text-gray-900 mb-2">Root Access Achieved!</h2>
+                                    <p className="text-gray-600">Performance Analysis</p>
+                                </div>
+
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 text-center">
+                                        <div className="text-3xl font-bold text-green-600">{score.score}</div>
+                                        <div className="text-sm text-gray-600">Total Score</div>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 text-center">
+                                        <div className="text-3xl font-bold text-blue-600">{minutes}m {seconds}s</div>
+                                        <div className="text-sm text-gray-600">Time Taken</div>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-lg p-4 text-center">
+                                        <div className="text-3xl font-bold text-yellow-600">{hintsUsed}</div>
+                                        <div className="text-sm text-gray-600">Hints Used</div>
+                                    </div>
+                                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4 text-center">
+                                        <div className="text-3xl font-bold text-purple-600">{score.time_bonus}</div>
+                                        <div className="text-sm text-gray-600">Time Bonus</div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                                    <h3 className="font-bold text-gray-900 mb-4">Score Breakdown</h3>
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-700">Base Score:</span>
+                                            <span className="font-bold text-green-600">+{score.base_score}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-700">Time Bonus:</span>
+                                            <span className="font-bold text-blue-600">+{score.time_bonus}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-700">Hint Penalty:</span>
+                                            <span className="font-bold text-red-600">-{score.hint_penalty}</span>
+                                        </div>
+                                        <div className="flex justify-between pt-2 border-t-2">
+                                            <span className="font-bold text-gray-900">Final Score:</span>
+                                            <span className="font-bold text-purple-600 text-lg">{score.score}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid md:grid-cols-2 gap-6 mb-6">
+                                    <div className="bg-blue-50 rounded-lg p-6">
+                                        <h3 className="font-bold text-blue-900 mb-3">What You Learned</h3>
+                                        <ul className="space-y-2 text-sm text-blue-800">
+                                            <li>• Linux privilege escalation techniques</li>
+                                            <li>• SUID binary exploitation</li>
+                                            <li>• Sudo configuration weaknesses</li>
+                                            <li>• File permission analysis</li>
+                                            <li>• Post-exploitation enumeration</li>
+                                        </ul>
+                                    </div>
+                                    <div className="bg-green-50 rounded-lg p-6">
+                                        <h3 className="font-bold text-green-900 mb-3">Defense Recommendations</h3>
+                                        <ul className="space-y-2 text-sm text-green-800">
+                                            <li>• Regular audit of SUID binaries</li>
+                                            <li>• Restrictive sudo configurations</li>
+                                            <li>• Proper file permission management</li>
+                                            <li>• Least privilege principle</li>
+                                            <li>• Security monitoring and logging</li>
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div className="bg-yellow-50 border-l-4 border-yellow-500 p-6">
+                                    <h3 className="font-bold text-yellow-900 mb-3">Key Takeaways</h3>
+                                    <div className="text-sm text-yellow-800 space-y-2">
+                                        <p>
+                                            <strong>Privilege escalation</strong> is a critical phase in penetration testing. 
+                                            Understanding these techniques helps both attackers (in authorized contexts) and 
+                                            defenders secure systems.
+                                        </p>
+                                        <p>
+                                            <strong>Defense in depth</strong> is crucial - no single misconfiguration should 
+                                            allow full system compromise. Regular audits and proper configuration management 
+                                            are essential.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-center space-x-4 mt-8">
+                                    <a
+                                        href="simulator.html"
+                                        onClick={async (e) => {
+                                            // Auto-cleanup on exit
+                                            try {
+                                                await fetch('http://localhost:8000/privilege-escalation/stop', {
+                                                    method: 'POST'
+                                                });
+                                            } catch (err) {
+                                                console.log('Cleanup error:', err);
+                                            }
+                                        }}
+                                        className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium"
+                                    >
+                                        Back to Training Center
+                                    </a>
+                                    <button
+                                        onClick={() => window.location.reload()}
+                                        className="px-6 py-3 bg-gradient-to-r from-red-500 to-orange-600 text-white rounded-lg hover:from-red-600 hover:to-orange-700 font-medium"
+                                    >
+                                        Try Again
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+        };
+
+        ReactDOM.render(React.createElement(PrivilegeEscalationChallenge), document.getElementById('root'));
+    </script>
+</body>
+</html>

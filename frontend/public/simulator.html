@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+simulator.html<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -48,169 +48,322 @@
                                 </span>
                             </h1>
                             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                                Choose between realistic incident simulations, knowledge-based quizzes, or hands-on log analysis 
-                                to test and improve your cybersecurity skills.
+                                Master both defensive (Blue Team) and offensive (Red Team) cybersecurity skills
                             </p>
                         </div>
 
-                        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                            
-                            {/* Simulation Card */}
-                            <div 
-                                onClick={() => setSelectedMode('simulation')}
-                                className="bg-white rounded-2xl shadow-xl p-8 border-2 border-transparent hover:border-purple-500 cursor-pointer transform transition hover:-translate-y-2"
-                            >
-                                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mx-auto mb-6">
-                                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                    </svg>
+                        {/* DEFENSIVE EXERCISES SECTION */}
+                        <div className="mb-16">
+                            <div className="flex items-center mb-8">
+                                <div className="flex-1 border-t-2 border-blue-300"></div>
+                                <div className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full">
+                                    <h2 className="text-xl font-bold text-white flex items-center">
+                                        <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                        </svg>
+                                        Defensive Exercises (Blue Team)
+                                    </h2>
                                 </div>
-                                <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">Live Simulation</h3>
-                                <p className="text-gray-600 mb-6 text-center">
-                                    Experience realistic cyber attack scenarios in real-time. Analyze security events, 
-                                    identify threats, and make critical incident response decisions.
-                                </p>
-                                <div className="space-y-2 mb-6">
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                        </svg>
-                                        Real-time event streams
-                                    </div>
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                        </svg>
-                                        Dynamic threat scenarios
-                                    </div>
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                        </svg>
-                                        Instant feedback
-                                    </div>
-                                </div>
-                                <button className="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-purple-600 hover:to-pink-700 transition">
-                                    Start Simulation
-                                </button>
-                                <p className="text-center text-xs text-gray-500 mt-3">Est. 10-15 min</p>
+                                <div className="flex-1 border-t-2 border-blue-300"></div>
                             </div>
 
-                            {/* Quiz Card */}
-                            <div 
-                                onClick={() => setSelectedMode('quiz')}
-                                className="bg-white rounded-2xl shadow-xl p-8 border-2 border-transparent hover:border-blue-500 cursor-pointer transform transition hover:-translate-y-2"
-                            >
-                                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-6">
-                                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                                    </svg>
+                            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                                
+                                {/* Simulation Card */}
+                                <div 
+                                    onClick={() => setSelectedMode('simulation')}
+                                    className="bg-white rounded-2xl shadow-xl p-8 border-2 border-transparent hover:border-purple-500 cursor-pointer transform transition hover:-translate-y-2"
+                                >
+                                    <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center mx-auto mb-6">
+                                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">Live Simulation</h3>
+                                    <p className="text-gray-600 mb-6 text-center text-sm">
+                                        Experience realistic cyber attack scenarios in real-time. Analyze security events and respond to incidents.
+                                    </p>
+                                    <div className="space-y-2 mb-6">
+                                        <div className="flex items-center text-sm text-gray-600">
+                                            <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                            Real-time event streams
+                                        </div>
+                                        <div className="flex items-center text-sm text-gray-600">
+                                            <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                            Dynamic threats
+                                        </div>
+                                        <div className="flex items-center text-sm text-gray-600">
+                                            <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                            Instant feedback
+                                        </div>
+                                    </div>
+                                    <button className="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-purple-600 hover:to-pink-700 transition">
+                                        Start Simulation
+                                    </button>
+                                    <p className="text-center text-xs text-gray-500 mt-3">Est. 10-15 min</p>
                                 </div>
-                                <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">Knowledge Quiz</h3>
-                                <p className="text-gray-600 mb-6 text-center">
-                                    Test your understanding with multiple-choice questions covering phishing, malware, 
-                                    incident response, and digital forensics concepts.
-                                </p>
-                                <div className="space-y-2 mb-6">
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+
+                                {/* Quiz Card */}
+                                <div 
+                                    onClick={() => setSelectedMode('quiz')}
+                                    className="bg-white rounded-2xl shadow-xl p-8 border-2 border-transparent hover:border-blue-500 cursor-pointer transform transition hover:-translate-y-2"
+                                >
+                                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-6">
+                                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                                         </svg>
-                                        10 carefully crafted questions
                                     </div>
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                        </svg>
-                                        Multiple topic categories
+                                    <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">Knowledge Quiz</h3>
+                                    <p className="text-gray-600 mb-6 text-center text-sm">
+                                        Test your understanding with questions covering phishing, malware, incident response, and forensics.
+                                    </p>
+                                    <div className="space-y-2 mb-6">
+                                        <div className="flex items-center text-sm text-gray-600">
+                                            <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                            10 curated questions
+                                        </div>
+                                        <div className="flex items-center text-sm text-gray-600">
+                                            <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                            Multiple categories
+                                        </div>
+                                        <div className="flex items-center text-sm text-gray-600">
+                                            <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                            Detailed explanations
+                                        </div>
                                     </div>
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                        </svg>
-                                        Detailed explanations
-                                    </div>
+                                    <button className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition">
+                                        Start Quiz
+                                    </button>
+                                    <p className="text-center text-xs text-gray-500 mt-3">Est. 5-8 min</p>
                                 </div>
-                                <button className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition">
-                                    Start Quiz
-                                </button>
-                                <p className="text-center text-xs text-gray-500 mt-3">Est. 5-8 min</p>
+
+                                {/* Log Analysis Card */}
+                                <div 
+                                    onClick={() => setSelectedMode('logs')}
+                                    className="bg-white rounded-2xl shadow-xl p-8 border-2 border-transparent hover:border-green-500 cursor-pointer transform transition hover:-translate-y-2"
+                                >
+                                    <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center mx-auto mb-6">
+                                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">Log Analysis</h3>
+                                    <p className="text-gray-600 mb-6 text-center text-sm">
+                                        Analyze real system logs to identify security threats. Practice hands-on threat hunting skills.
+                                    </p>
+                                    <div className="space-y-2 mb-6">
+                                        <div className="flex items-center text-sm text-gray-600">
+                                            <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                            Real log analysis
+                                        </div>
+                                        <div className="flex items-center text-sm text-gray-600">
+                                            <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                            3 difficulty levels
+                                        </div>
+                                        <div className="flex items-center text-sm text-gray-600">
+                                            <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                            Threat hunting
+                                        </div>
+                                    </div>
+                                    <button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-green-600 hover:to-emerald-700 transition">
+                                        Start Log Analysis
+                                    </button>
+                                    <p className="text-center text-xs text-gray-500 mt-3">Est. 15-40 min</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* OFFENSIVE EXERCISES SECTION */}
+                        <div className="mb-16">
+                            <div className="flex items-center mb-8">
+                                <div className="flex-1 border-t-2 border-red-300"></div>
+                                <div className="px-6 py-3 bg-gradient-to-r from-red-500 to-orange-600 rounded-full">
+                                    <h2 className="text-xl font-bold text-white flex items-center">
+                                        <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                        </svg>
+                                        Offensive Exercises (Red Team)
+                                    </h2>
+                                </div>
+                                <div className="flex-1 border-t-2 border-red-300"></div>
                             </div>
 
-                            {/* NEW: Log Analysis Card */}
-                            <div 
-                                onClick={() => setSelectedMode('logs')}
-                                className="bg-white rounded-2xl shadow-xl p-8 border-2 border-transparent hover:border-green-500 cursor-pointer transform transition hover:-translate-y-2"
-                            >
-                                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center mx-auto mb-6">
-                                    <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
+                            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                                
+                                {/* Password Cracking Card */}
+                                <div 
+                                    onClick={() => setSelectedMode('password_cracking')}
+                                    className="bg-white rounded-2xl shadow-xl p-8 border-2 border-transparent hover:border-red-500 cursor-pointer transform transition hover:-translate-y-2"
+                                >
+                                    <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl flex items-center justify-center mx-auto mb-6">
+                                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2-2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">Password Cracking</h3>
+                                    <p className="text-gray-600 mb-6 text-center text-sm">
+                                        Learn cryptographic hash cracking techniques. Practice with MD5, SHA-1, and bcrypt hashes in a legal environment.
+                                    </p>
+                                    <div className="space-y-2 mb-6">
+                                        <div className="flex items-center text-sm text-gray-600">
+                                            <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                            Multiple hash types
+                                        </div>
+                                        <div className="flex items-center text-sm text-gray-600">
+                                            <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                            Real cracking tools
+                                        </div>
+                                        <div className="flex items-center text-sm text-gray-600">
+                                            <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                            Educational focus
+                                        </div>
+                                    </div>
+                                    <button className="w-full bg-gradient-to-r from-red-500 to-orange-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-red-600 hover:to-orange-700 transition">
+                                        Start Challenge
+                                    </button>
+                                    <p className="text-center text-xs text-gray-500 mt-3">Est. 10-20 min</p>
                                 </div>
-                                <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">Log Analysis</h3>
-                                <p className="text-gray-600 mb-6 text-center">
-                                    Analyze real system logs to identify security threats. Practice hands-on threat hunting 
-                                    and detection skills used by SOC analysts.
-                                </p>
-                                <div className="space-y-2 mb-6">
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+
+<div 
+    onClick={() => setSelectedMode('privilege_escalation')}
+    className="bg-white rounded-2xl shadow-xl p-8 border-2 border-transparent hover:border-orange-500 cursor-pointer transform transition hover:-translate-y-2"
+>
+    <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center mx-auto mb-6">
+        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+        </svg>
+    </div>
+    <h3 className="text-2xl font-bold text-gray-900 mb-4 text-center">Privilege Escalation</h3>
+    <p className="text-gray-600 mb-6 text-center text-sm">
+        Practice Linux privilege escalation in a real container environment. Execute real commands and exploit vulnerabilities.
+    </p>
+    <div className="space-y-2 mb-6">
+        <div className="flex items-center text-sm text-gray-600">
+            <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            Real Linux container
+        </div>
+        <div className="flex items-center text-sm text-gray-600">
+            <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            Interactive terminal
+        </div>
+        <div className="flex items-center text-sm text-gray-600">
+            <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            Actual vulnerabilities
+        </div>
+    </div>
+    <button className="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-orange-600 hover:to-red-700 transition">
+        Start Challenge
+    </button>
+    <p className="text-center text-xs text-gray-500 mt-3">Est. 15-30 min</p>
+</div>
+
+
+
+                                <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl shadow-xl p-8 border-2 border-dashed border-gray-400 opacity-60">
+                                    <div className="w-16 h-16 bg-gray-400 rounded-xl flex items-center justify-center mx-auto mb-6">
+                                        <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
                                         </svg>
-                                        Real log file analysis
                                     </div>
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                        </svg>
-                                        3 difficulty levels
+                                    <h3 className="text-2xl font-bold text-gray-600 mb-4 text-center">Coming Soon</h3>
+                                    <p className="text-gray-500 mb-6 text-center text-sm">
+                                        More offensive security exercises will be added soon. Stay tuned!
+                                    </p>
+                                    <div className="text-center text-xs text-gray-500 mb-6">
+                                        Future topics: Network Reconnaissance, Social Engineering, and more...
                                     </div>
-                                    <div className="flex items-center text-sm text-gray-600">
-                                        <svg className="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                        </svg>
-                                        Threat hunting practice
-                                    </div>
+                                    <button disabled className="w-full bg-gray-400 text-white font-semibold py-3 px-6 rounded-lg cursor-not-allowed">
+                                        Not Available
+                                    </button>
                                 </div>
-                                <button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-green-600 hover:to-emerald-700 transition">
-                                    Start Log Analysis
-                                </button>
-                                <p className="text-center text-xs text-gray-500 mt-3">Est. 15-40 min</p>
+                            </div>
+                        </div>
+
+                        {/* Ethical Warning */}
+                        <div className="max-w-4xl mx-auto bg-yellow-50 border-2 border-yellow-400 rounded-xl shadow-lg p-6 mb-8">
+                            <div className="flex items-start">
+                                <svg className="w-8 h-8 text-yellow-600 mr-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                </svg>
+                                <div>
+                                    <h3 className="text-lg font-bold text-yellow-900 mb-2">Educational Use Only - Legal Notice</h3>
+                                    <p className="text-sm text-yellow-800 mb-2">
+                                        All offensive security exercises are for <strong>educational purposes only</strong> within this controlled environment. 
+                                    </p>
+                                    <p className="text-sm text-yellow-800">
+                                        <strong>WARNING:</strong> Using these techniques on systems without explicit written authorization is <strong>illegal</strong> and may result in criminal prosecution. 
+                                        Always obtain proper authorization before conducting security testing.
+                                    </p>
+                                </div>
                             </div>
                         </div>
 
                         {/* Info Section */}
-                        <div className="mt-16 max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8">
-                            <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">Not sure which to choose?</h3>
-                            <div className="grid md:grid-cols-3 gap-6 text-sm">
-                                <div>
-                                    <p className="font-semibold text-purple-600 mb-2">Choose Simulation if you want to:</p>
-                                    <ul className="space-y-1 text-gray-600">
-                                        <li>• Practice hands-on incident response</li>
-                                        <li>• Work with realistic security events</li>
-                                        <li>• Experience time-sensitive decisions</li>
-                                        <li>• Get detailed performance feedback</li>
+                        <div className="mt-8 max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-8">
+                            <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">Training Path Guidance</h3>
+                            <div className="grid md:grid-cols-2 gap-6 text-sm">
+                                <div className="p-4 bg-blue-50 rounded-lg">
+                                    <p className="font-semibold text-blue-700 mb-2 flex items-center">
+                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                                        </svg>
+                                        Defensive Training (Blue Team)
+                                    </p>
+                                    <ul className="space-y-1 text-gray-700 ml-7">
+                                        <li>• Incident response procedures</li>
+                                        <li>• Threat detection and analysis</li>
+                                        <li>• Security monitoring (SIEM, logs)</li>
+                                        <li>• System hardening and defense</li>
                                     </ul>
                                 </div>
-                                <div>
-                                    <p className="font-semibold text-blue-600 mb-2">Choose Quiz if you want to:</p>
-                                    <ul className="space-y-1 text-gray-600">
-                                        <li>• Test theoretical knowledge</li>
-                                        <li>• Quick assessment</li>
-                                        <li>• Learn from detailed explanations</li>
-                                        <li>• Identify knowledge gaps</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <p className="font-semibold text-green-600 mb-2">Choose Log Analysis if you want to:</p>
-                                    <ul className="space-y-1 text-gray-600">
-                                        <li>• Practice real SOC analyst work</li>
-                                        <li>• Learn threat hunting techniques</li>
-                                        <li>• Analyze actual log patterns</li>
-                                        <li>• Master attack detection</li>
+                                <div className="p-4 bg-red-50 rounded-lg">
+                                    <p className="font-semibold text-red-700 mb-2 flex items-center">
+                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2-2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                        </svg>
+                                        Offensive Training (Red Team)
+                                    </p>
+                                    <ul className="space-y-1 text-gray-700 ml-7">
+                                        <li>• Ethical hacking techniques</li>
+                                        <li>• Vulnerability identification</li>
+                                        <li>• Penetration testing methods</li>
+                                        <li>• Understanding attacker mindset</li>
                                     </ul>
                                 </div>
                             </div>
+                            <p className="text-center text-gray-600 mt-6 text-sm">
+                                <strong>Recommended:</strong> Complete defensive exercises before attempting offensive training to understand both perspectives.
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -225,7 +378,14 @@
             } else if (selectedMode === 'logs') {
                 window.location.href = 'log_analyzer.html';
                 return null;
-            }
+            } else if (selectedMode === 'password_cracking') {
+                window.location.href = 'password_cracking.html';
+                return null;
+            } else if (selectedMode === 'privilege_escalation') {
+    window.location.href = 'privilege_escalation.html';
+    return null;
+}
+
 
             return <TrainingModeSelection />;
         };

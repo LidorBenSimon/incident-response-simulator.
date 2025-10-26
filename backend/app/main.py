@@ -6,6 +6,9 @@ from datetime import datetime
 import json
 import uuid
 import os
+import docker
+import subprocess
+from typing import Dict, Any
 
 # Existing imports
 from models.scenario import Scenario, ScenarioSession, ScenarioCreate, ScenarioStatus
@@ -497,6 +500,693 @@ async def submit_log_analysis(submission: LogSubmission):
     )
     
     return result
+
+
+
+
+
+
+
+
+
+@app.post("/privilege-escalation/start")
+async def start_privesc_lab():
+    """Start the privilege escalation lab container"""
+    try:
+        client = docker.from_env()
+        
+        try:
+            container = client.containers.get("privesc_lab")
+            if container.status == "running":
+                # Container already running - restart it
+                container.restart()
+                # Wait for services to start
+                import time
+                time.sleep(5)
+                return {
+                    "status": "success",
+                    "message": "Lab restarted for fresh session",
+                    "container_id": container.id,
+                    "username": "lowpriv",
+                    "password": "student123",
+                    "timestamp": datetime.now().isoformat()
+                }
+            else:
+                container.start()
+                import time
+                time.sleep(5)
+                return {
+                    "status": "success",
+                    "message": "Privilege Escalation Lab started",
+                    "container_id": container.id,
+                    "username": "lowpriv",
+                    "password": "student123",
+                    "timestamp": datetime.now().isoformat()
+                }
+        except docker.errors.NotFound:
+            # Container doesn't exist, start with docker-compose
+            result = subprocess.run(
+                ['docker-compose', 'up', '-d', 'privesc_lab'],
+                cwd='/root/incident-response-simulator',
+                capture_output=True,
+                text=True
+            )
+            
+            if result.returncode == 0:
+                import time
+                time.sleep(8)  # Wait longer for initial setup
+                
+                container = client.containers.get("privesc_lab")
+                return {
+                    "status": "success",
+                    "message": "Lab container created and started",
+                    "container_id": container.id,
+                    "username": "lowpriv",
+                    "password": "student123",
+                    "timestamp": datetime.now().isoformat()
+                }
+            else:
+                return {
+                    "status": "error",
+                    "message": f"Failed to start container: {result.stderr}",
+                    "timestamp": datetime.now().isoformat()
+                }
+                
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error starting lab: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+@app.post("/privilege-escalation/execute")
+async def execute_command(command_data: Dict[str, Any]):
+    """Execute command in privilege escalation lab - FIXED VERSION"""
+    try:
+        client = docker.from_env()
+        container = client.containers.get("privesc_lab")
+        
+        if container.status != "running":
+            return {
+                "status": "error",
+                "message": "Lab container is not running. Please start the lab first.",
+                "timestamp": datetime.now().isoformat()
+            }
+        
+        command = command_data.get("command", "")
+        
+        if not command:
+            return {
+                "status": "error",
+                "message": "No command provided"
+            }
+        
+        # Security: Block dangerous commands
+        blocked_commands = ["rm -rf /", "mkfs", "dd if=/dev/zero"]
+        if any(blocked in command for blocked in blocked_commands):
+            return {
+                "status": "error",
+                "output": "Command blocked for safety reasons",
+                "timestamp": datetime.now().isoformat()
+            }
+        
+        # FIXED: Use proper shell script for su command
+        # Create a temporary script file and execute it
+        script_content = f"""#!/bin/bash
+su - lowpriv << 'EOFSU'
+{command}
+EOFSU
+"""
+        
+        # Write script to container
+        script_name = f"/tmp/cmd_{datetime.now().timestamp()}.sh"
+        create_script = container.exec_run(
+            f"bash -c \"cat > {script_name} << 'EOFSCRIPT'\n{script_content}\nEOFSCRIPT\"",
+            stdout=True,
+            stderr=True
+        )
+        
+        # Make script executable
+        container.exec_run(f"chmod +x {script_name}")
+        
+        # Execute the script
+        exec_result = container.exec_run(
+            f"bash {script_name}",
+            stdout=True,
+            stderr=True,
+            demux=False
+        )
+        
+        # Clean up script
+        container.exec_run(f"rm -f {script_name}")
+        
+        output = exec_result.output.decode('utf-8', errors='replace')
+        exit_code = exec_result.exit_code
+        
+        # Check if flag was found
+        flag_found = "FLAG{" in output
+        is_root = "root@" in output or "uid=0" in output
+        
+        return {
+            "status": "success",
+            "output": output,
+            "exit_code": exit_code,
+            "flag_found": flag_found,
+            "is_root": is_root,
+            "command": command,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except docker.errors.NotFound:
+        return {
+            "status": "error",
+            "message": "Lab container not found. Please start the lab first.",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error executing command: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+@app.get("/privilege-escalation/hint/{hint_number}")
+async def get_hint(hint_number: int):
+    """Get progressive hints for the challenge"""
+    hints = {
+        1: {
+            "title": "Reconnaissance",
+            "hint": "Start by exploring the system. Check what commands you can run and what files you have access to.",
+            "commands": ["whoami", "id", "ls -la", "pwd", "uname -a"]
+        },
+        2: {
+            "title": "SUID Binaries",
+            "hint": "Look for files with the SUID bit set. These run with the owner's privileges (usually root).",
+            "commands": ["find / -perm -4000 -type f 2>/dev/null", "ls -la /usr/local/bin/"]
+        },
+        3: {
+            "title": "Sudo Permissions",
+            "hint": "Check what commands you can run with sudo. Sometimes misconfigured sudo can lead to privilege escalation.",
+            "commands": ["sudo -l"]
+        },
+        4: {
+            "title": "SUID Exploitation",
+            "hint": "Found /usr/local/bin/backup? It has SUID bit and runs as root. Execute it directly.",
+            "commands": ["/usr/local/bin/backup", "# This will give you root shell!"]
+        },
+        5: {
+            "title": "Alternative: Sudo Find",
+            "hint": "If you have sudo access to 'find', you can use it to execute commands as root using -exec flag.",
+            "commands": ["sudo find /home -exec /bin/bash \\;"]
+        },
+        6: {
+            "title": "Getting the Flag",
+            "hint": "Once you have root shell, read the flag from /root/flag.txt",
+            "commands": ["whoami", "cat /root/flag.txt"]
+        }
+    }
+    
+    if hint_number not in hints:
+        return {
+            "status": "error",
+            "message": "Invalid hint number. Available hints: 1-6"
+        }
+    
+    return {
+        "status": "success",
+        "hint": hints[hint_number],
+        "timestamp": datetime.now().isoformat()
+    }
+
+
+@app.post("/privilege-escalation/submit-flag")
+async def submit_flag(flag_data: Dict[str, Any]):
+    """Submit flag and calculate score"""
+    submitted_flag = flag_data.get("flag", "").strip()
+    time_taken = flag_data.get("time_taken", 0)
+    hints_used = flag_data.get("hints_used", 0)
+    
+    correct_flag = "FLAG{pr1v3sc_m4st3r_2024}"
+    
+    if submitted_flag == correct_flag:
+        # Calculate score
+        base_score = 100
+        time_bonus = max(0, 50 - (int(time_taken) // 60))  # Bonus for speed
+        hint_penalty = hints_used * 5  # -5 points per hint
+        
+        final_score = max(0, min(150, base_score + time_bonus - hint_penalty))
+        
+        return {
+            "status": "success",
+            "correct": True,
+            "score": final_score,
+            "base_score": base_score,
+            "time_bonus": time_bonus,
+            "hint_penalty": hint_penalty,
+            "message": "Congratulations! You've successfully escalated privileges to root!",
+            "timestamp": datetime.now().isoformat()
+        }
+    else:
+        return {
+            "status": "success",
+            "correct": False,
+            "message": "Incorrect flag. Keep trying!",
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+@app.post("/privilege-escalation/stop")
+async def stop_privesc_lab():
+    """Stop the privilege escalation lab"""
+    try:
+        client = docker.from_env()
+        container = client.containers.get("privesc_lab")
+        container.stop()
+        
+        return {
+            "status": "success",
+            "message": "Lab stopped successfully",
+            "timestamp": datetime.now().isoformat()
+        }
+    except docker.errors.NotFound:
+        return {
+            "status": "error",
+            "message": "Lab container not found",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error stopping lab: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+@app.get("/privilege-escalation/status")
+async def get_lab_status():
+    """Get current lab status"""
+    try:
+        client = docker.from_env()
+        container = client.containers.get("privesc_lab")
+        
+        return {
+            "status": "success",
+            "running": container.status == "running",
+            "container_status": container.status,
+            "created": container.attrs['Created'],
+            "timestamp": datetime.now().isoformat()
+        }
+    except docker.errors.NotFound:
+        return {
+            "status": "success",
+            "running": False,
+            "message": "Lab not created yet",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error checking status: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+# ============================================
+# PASSWORD CRACKING LAB - FIXED ENDPOINTS
+# ============================================
+
+@app.post("/hashcrack/start")
+async def start_hashcrack_lab():
+    """Start the password cracking lab container"""
+    try:
+        client = docker.from_env()
+        
+        try:
+            container = client.containers.get("hashcrack_lab")
+            if container.status == "running":
+                container.restart()
+                import time
+                time.sleep(5)
+                return {
+                    "status": "success",
+                    "message": "Lab restarted for fresh session",
+                    "container_id": container.id,
+                    "username": "pentester",
+                    "password": "cracker123",
+                    "timestamp": datetime.now().isoformat()
+                }
+            else:
+                container.start()
+                import time
+                time.sleep(5)
+                return {
+                    "status": "success",
+                    "message": "Password Cracking Lab started",
+                    "container_id": container.id,
+                    "username": "pentester",
+                    "password": "cracker123",
+                    "timestamp": datetime.now().isoformat()
+                }
+        except docker.errors.NotFound:
+            result = subprocess.run(
+                ['docker-compose', 'up', '-d', 'hashcrack_lab'],
+                cwd='/root/incident-response-simulator',
+                capture_output=True,
+                text=True
+            )
+            
+            if result.returncode == 0:
+                import time
+                time.sleep(8)
+                
+                container = client.containers.get("hashcrack_lab")
+                return {
+                    "status": "success",
+                    "message": "Lab container created and started",
+                    "container_id": container.id,
+                    "username": "pentester",
+                    "password": "cracker123",
+                    "timestamp": datetime.now().isoformat()
+                }
+            else:
+                return {
+                    "status": "error",
+                    "message": f"Failed to start container: {result.stderr}",
+                    "timestamp": datetime.now().isoformat()
+                }
+                
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error starting lab: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+@app.post("/hashcrack/execute")
+async def execute_hashcrack_command(command_data: Dict[str, Any]):
+    """Execute command in password cracking lab - FIXED VERSION"""
+    try:
+        client = docker.from_env()
+        container = client.containers.get("hashcrack_lab")
+        
+        if container.status != "running":
+            return {
+                "status": "error",
+                "message": "Lab container is not running. Please start the lab first.",
+                "timestamp": datetime.now().isoformat()
+            }
+        
+        command = command_data.get("command", "")
+        
+        if not command:
+            return {
+                "status": "error",
+                "message": "No command provided"
+            }
+        
+        # FIXED: Use proper shell script for su command
+        script_content = f"""#!/bin/bash
+su - pentester << 'EOFSU'
+{command}
+EOFSU
+"""
+        
+        # Write script to container
+        script_name = f"/tmp/cmd_{datetime.now().timestamp()}.sh"
+        create_script = container.exec_run(
+            f"bash -c \"cat > {script_name} << 'EOFSCRIPT'\n{script_content}\nEOFSCRIPT\"",
+            stdout=True,
+            stderr=True
+        )
+        
+        # Make script executable
+        container.exec_run(f"chmod +x {script_name}")
+        
+        # Execute the script
+        exec_result = container.exec_run(
+            f"bash {script_name}",
+            stdout=True,
+            stderr=True,
+            demux=False
+        )
+        
+        # Clean up script
+        container.exec_run(f"rm -f {script_name}")
+        
+        output = exec_result.output.decode('utf-8', errors='replace')
+        exit_code = exec_result.exit_code
+        
+        # Check for cracked passwords
+        cracked_found = "Cracked" in output or ("password" in output.lower() and ":" in output)
+        
+        return {
+            "status": "success",
+            "output": output,
+            "exit_code": exit_code,
+            "cracked_found": cracked_found,
+            "command": command,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except docker.errors.NotFound:
+        return {
+            "status": "error",
+            "message": "Lab container not found. Please start the lab first.",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error executing command: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+@app.get("/hashcrack/files")
+async def list_hashcrack_files():
+    """List available hash files and wordlists"""
+    try:
+        client = docker.from_env()
+        container = client.containers.get("hashcrack_lab")
+        
+        # List hash files
+        hash_result = container.exec_run("ls -la /hashes/", stdout=True, stderr=True)
+        hash_files = hash_result.output.decode('utf-8', errors='replace')
+        
+        # List wordlists
+        wordlist_result = container.exec_run("ls -lh /wordlists/", stdout=True, stderr=True)
+        wordlists = wordlist_result.output.decode('utf-8', errors='replace')
+        
+        return {
+            "status": "success",
+            "hash_files": hash_files,
+            "wordlists": wordlists,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error listing files: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+@app.get("/hashcrack/hint/{hint_number}")
+async def get_hashcrack_hint(hint_number: int):
+    """Get progressive hints for password cracking"""
+    hints = {
+        1: {
+            "title": "Getting Started",
+            "hint": "Start by exploring what files are available. Check /hashes/ directory for hash dumps.",
+            "commands": ["ls -la /hashes/", "cat /hashes/README.txt"]
+        },
+        2: {
+            "title": "Hash Identification",
+            "hint": "You need to identify the hash type before cracking. Look at hash length and format.",
+            "commands": [
+                "cat /hashes/company_dump_md5.txt",
+                "# MD5 = 32 chars hex",
+                "# SHA-1 = 40 chars hex"
+            ]
+        },
+        3: {
+            "title": "Choose Your Tool",
+            "hint": "You have two main tools: john (simple) and hashcat (powerful). Start with john for learning.",
+            "commands": ["john --help", "hashcat --help"]
+        },
+        4: {
+            "title": "Select Wordlist",
+            "hint": "Check available wordlists. Start with rockyou.txt (fastest for this lab).",
+            "commands": ["ls -lh /wordlists/", "wc -l /wordlists/rockyou.txt"]
+        },
+        5: {
+            "title": "Cracking MD5 with John",
+            "hint": "Use john with format and wordlist. IMPORTANT: Use lowercase 'raw-md5' for the format.",
+            "commands": [
+                "john --format=raw-md5 --wordlist=/wordlists/rockyou.txt /hashes/company_dump_md5.txt",
+                "john --format=raw-md5 --show /hashes/company_dump_md5.txt"
+            ]
+        },
+        6: {
+            "title": "Using Hashcat",
+            "hint": "Hashcat is faster. MD5=0, SHA1=100. Use --force to bypass warnings.",
+            "commands": [
+                "hashcat -m 0 /hashes/company_dump_md5.txt /wordlists/rockyou.txt --force",
+                "hashcat -m 0 /hashes/company_dump_md5.txt --show"
+            ]
+        },
+        7: {
+            "title": "View Results",
+            "hint": "After cracking, view your results with --show flag",
+            "commands": [
+                "john --format=raw-md5 --show /hashes/company_dump_md5.txt",
+                "hashcat -m 0 /hashes/company_dump_md5.txt --show"
+            ]
+        }
+    }
+    
+    if hint_number not in hints:
+        return {
+            "status": "error",
+            "message": "Invalid hint number. Available hints: 1-7"
+        }
+    
+    return {
+        "status": "success",
+        "hint": hints[hint_number],
+        "timestamp": datetime.now().isoformat()
+    }
+
+
+@app.post("/hashcrack/submit-results")
+async def submit_hashcrack_results(results_data: Dict[str, Any]):
+    """Submit cracked passwords and calculate score"""
+    cracked_passwords = results_data.get("cracked_passwords", [])
+    time_taken = results_data.get("time_taken", 0)
+    hints_used = results_data.get("hints_used", 0)
+    tool_used = results_data.get("tool_used", "unknown")
+    
+    # Expected passwords (what can be cracked with rockyou.txt)
+    expected_cracks = {
+        "5f4dcc3b5aa765d61d8327deb882cf99": "password",
+        "e10adc3949ba59abbe56e057f20f883e": "123456",
+        "25d55ad283aa400af464c76d713c07ad": "12345678",
+        "fcea920f7412b5da7be0cf42b8c93759": "pass123",
+        "1a1dc91c907325c69271ddf0c944bc72": "Password123",
+        "5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8": "password",
+        "8cb2237d0679ca88db6464eac60da96345513964": "qwerty",
+        "209c6174da490caeb422f3fa5a7ae634": "password",
+        "32ed87bdb5fdc5e9cba88547376818d4": "Password123"
+    }
+    
+    total_crackable = len(expected_cracks)
+    correct_cracks = len(cracked_passwords)
+    
+    # Calculate score
+    base_score = (correct_cracks / total_crackable) * 100
+    time_bonus = max(0, 30 - (int(time_taken) // 60))
+    hint_penalty = hints_used * 3
+    tool_bonus = 10 if tool_used == "hashcat" else 5 if tool_used == "john" else 0
+    
+    final_score = max(0, min(150, base_score + time_bonus - hint_penalty + tool_bonus))
+    
+    # Grade
+    if final_score >= 90:
+        grade = "A"
+    elif final_score >= 75:
+        grade = "B"
+    elif final_score >= 60:
+        grade = "C"
+    elif final_score >= 40:
+        grade = "D"
+    else:
+        grade = "F"
+    
+    return {
+        "status": "success",
+        "score": round(final_score, 1),
+        "grade": grade,
+        "base_score": round(base_score, 1),
+        "time_bonus": time_bonus,
+        "hint_penalty": hint_penalty,
+        "tool_bonus": tool_bonus,
+        "cracked_count": correct_cracks,
+        "total_crackable": total_crackable,
+        "success_rate": round((correct_cracks / total_crackable) * 100, 1),
+        "timestamp": datetime.now().isoformat()
+    }
+
+
+@app.post("/hashcrack/stop")
+async def stop_hashcrack_lab():
+    """Stop the password cracking lab"""
+    try:
+        client = docker.from_env()
+        container = client.containers.get("hashcrack_lab")
+        container.stop()
+        
+        return {
+            "status": "success",
+            "message": "Lab stopped successfully",
+            "timestamp": datetime.now().isoformat()
+        }
+    except docker.errors.NotFound:
+        return {
+            "status": "error",
+            "message": "Lab container not found",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error stopping lab: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+@app.get("/hashcrack/status")
+async def get_hashcrack_status():
+    """Get current lab status"""
+    try:
+        client = docker.from_env()
+        container = client.containers.get("hashcrack_lab")
+        
+        return {
+            "status": "success",
+            "running": container.status == "running",
+            "container_status": container.status,
+            "timestamp": datetime.now().isoformat()
+        }
+    except docker.errors.NotFound:
+        return {
+            "status": "success",
+            "running": False,
+            "message": "Lab not created yet",
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Error checking status: {str(e)}",
+            "timestamp": datetime.now().isoformat()
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 if __name__ == "__main__":
     uvicorn.run(

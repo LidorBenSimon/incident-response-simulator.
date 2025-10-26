@@ -17,6 +17,10 @@
 │   ├── attacker
 │   │   ├── logs
 │   │   └── web
+│   ├── hashcrack
+│   ├── privesc
+│   │   ├── flags
+│   │   └── setup.sh
 │   ├── siem
 │   │   ├── logs
 │   │   └── scripts
@@ -25,6 +29,8 @@
 │       └── scripts
 ├── docker-compose.yml
 ├── docker-compose.yml.backup
+├── docker-compose.yml.backup2
+├── docker-compose.yml.old
 ├── docs
 ├── frontend
 │   ├── package-lock.json
@@ -38,14 +44,17 @@
 │   │   ├── learning.html
 │   │   ├── log_analyzer.html
 │   │   ├── network_traffic.html
+│   │   ├── password_cracking.html
+│   │   ├── privilege_escalation.html
 │   │   ├── quiz.html
 │   │   ├── siem_dashboard.html
 │   │   ├── simulation_dashboard.html
-│   │   └── simulator.html
+│   │   ├── simulator.html
+│   │   └── system_demos.html
 │   └── src
 ├── logs
 │   └── collector.log
 ├── project_structure.txt
 └── scenarios
 
-26 directories, 23 files
+30 directories, 28 files

@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  # מחשב הקורבן - מדמה workstation רגיל
+  victim_workstation:
+    image: ubuntu:20.04
+    container_name: victim_workstation
+    hostname: DESKTOP-VICTIM01
+    networks:
+      - ir_network
+    ports:
+      - "2222:22"    # SSH
+      - "8080:80"    # Web server
+    environment:
+      - USER=john_doe
+      - HOSTNAME=DESKTOP-VICTIM01
+      - DEBIAN_FRONTEND=noninteractive
+    volumes:
+      - ./containers/victim/logs:/var/log/custom
+      - ./containers/victim/scripts:/scripts
+    command: |
+      bash -c "
+      apt-get update -qq &&
+      apt-get install -y -qq openssh-server apache2 curl wget &&
+      echo 'root:password123' | chpasswd &&
+      echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config &&
+      service ssh start &&
+      service apache2 start &&
+      echo '<h1>Corporate Workstation - DESKTOP-VICTIM01</h1>' > /var/www/html/index.html &&
+      echo 'Victim workstation is ready' | tee /var/log/custom/setup.log &&
+      tail -f /dev/null
+      "
+
+  # שרת התוקף - מדמה C&C server
+  attacker_server:
+    image: ubuntu:20.04
+    container_name: attacker_server
+    hostname: evil-server
+    networks:
+      - ir_network
+    ports:
+      - "9090:80"    # Phishing site
+      - "9443:443"   # HTTPS phishing
+    environment:
+      - ATTACK_TYPE=phishing
+      - TARGET=victim_workstation
+      - DEBIAN_FRONTEND=noninteractive
+    volumes:
+      - ./containers/attacker/logs:/var/log/custom
+      - ./containers/attacker/web:/var/www/html
+    command: |
+      bash -c "
+      apt-get update -qq &&
+      apt-get install -y -qq apache2 python3 python3-pip curl &&
+      service apache2 start &&
+      echo '<h1>Legitimate Bank Login</h1><form><input placeholder=\"Username\"><input placeholder=\"Password\" type=\"password\"><button>Login</button></form>' > /var/www/html/index.html &&
+      echo 'Attacker server ready' | tee /var/log/custom/setup.log &&
+      tail -f /dev/null
+      "
+
+  # מערכת ניטור לוגים (פשוטה)
+  log_collector:
+    image: ubuntu:20.04
+    container_name: log_collector
+    hostname: siem-server
+    networks:
+      - ir_network
+    ports:
+      - "5140:514"   # Syslog
+    volumes:
+      - ./logs:/var/log/collected
+      - ./containers/siem/scripts:/scripts
+    command: |
+      bash -c "
+      apt-get update -qq &&
+      apt-get install -y -qq rsyslog python3 python3-pip &&
+      echo 'Log collector ready' | tee /var/log/collected/collector.log &&
+      tail -f /dev/null
+      "
+
+networks:
+  ir_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

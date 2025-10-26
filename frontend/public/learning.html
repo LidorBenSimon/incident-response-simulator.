@@ -3,11 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Learning Center - IR Simulator</title>
+    <title>Learning Center - Cybersecurity Education Platform</title>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 16px 0;
+        }
+        .command { color: #4ec9b0; }
+        .comment { color: #6a9955; }
+        .keyword { color: #569cd6; }
+        .string { color: #ce9178; }
+        
+        .topic-card {
+            transition: all 0.3s ease;
+        }
+        .topic-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .attack-chain {
+            position: relative;
+            padding-left: 40px;
+        }
+        .attack-chain::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, #667eea, #764ba2);
+        }
+        .attack-step {
+            position: relative;
+            margin-bottom: 24px;
+        }
+        .attack-step::before {
+            content: '';
+            position: absolute;
+            left: -28px;
+            top: 8px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #667eea;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px #667eea;
+        }
+    </style>
 </head>
 <body>
     <div id="root"></div>
@@ -15,316 +76,1700 @@
         const { useState } = React;
 
         const LearningCenter = () => {
-            const [selectedTopic, setSelectedTopic] = useState('intro');
+            const [selectedCategory, setSelectedCategory] = useState('intro');
+            const [selectedTopic, setSelectedTopic] = useState('welcome');
 
-            const topics = [
-                { id: 'intro', title: 'Introduction to IR', icon: '🎯' },
-                { id: 'phishing', title: 'Phishing Attacks', icon: '🎣' },
-                { id: 'malware', title: 'Malware Detection', icon: '🦠' },
-                { id: 'lateral', title: 'Lateral Movement', icon: '🔀' },
-                { id: 'forensics', title: 'Digital Forensics', icon: '🔍' },
-                { id: 'response', title: 'Response Actions', icon: '⚡' }
+            const categories = [
+                { 
+                    id: 'intro', 
+                    title: 'Getting Started', 
+                    icon: '🎯',
+                    color: 'from-blue-500 to-cyan-500',
+                    topics: [
+                        { id: 'welcome', title: 'Welcome to Cybersecurity', icon: '👋' },
+                        { id: 'overview', title: 'Security Landscape', icon: '🌐' },
+                        { id: 'terminology', title: 'Essential Terminology', icon: '📖' }
+                    ]
+                },
+                { 
+                    id: 'attacks', 
+                    title: 'Attack Techniques', 
+                    icon: '⚔️',
+                    color: 'from-red-500 to-pink-500',
+                    topics: [
+                        { id: 'phishing', title: 'Phishing & Social Engineering', icon: '🎣' },
+                        { id: 'malware', title: 'Malware Analysis', icon: '🦠' },
+                        { id: 'network-attacks', title: 'Network Attacks', icon: '🌐' },
+                        { id: 'web-attacks', title: 'Web Application Attacks', icon: '🕸️' },
+                        { id: 'privilege-esc', title: 'Privilege Escalation', icon: '🔓' }
+                    ]
+                },
+                { 
+                    id: 'defense', 
+                    title: 'Defensive Security', 
+                    icon: '🛡️',
+                    color: 'from-green-500 to-emerald-500',
+                    topics: [
+                        { id: 'detection', title: 'Threat Detection', icon: '🔍' },
+                        { id: 'incident-response', title: 'Incident Response', icon: '⚡' },
+                        { id: 'forensics', title: 'Digital Forensics', icon: '🔬' },
+                        { id: 'hardening', title: 'System Hardening', icon: '🔒' }
+                    ]
+                },
+                { 
+                    id: 'tools', 
+                    title: 'Tools & Techniques', 
+                    icon: '🔧',
+                    color: 'from-purple-500 to-indigo-500',
+                    topics: [
+                        { id: 'log-analysis', title: 'Log Analysis', icon: '📊' },
+                        { id: 'network-monitoring', title: 'Network Monitoring', icon: '📡' },
+                        { id: 'password-security', title: 'Password Security', icon: '🔐' },
+                        { id: 'linux-security', title: 'Linux Security', icon: '🐧' }
+                    ]
+                },
+                { 
+                    id: 'advanced', 
+                    title: 'Advanced Topics', 
+                    icon: '🚀',
+                    color: 'from-orange-500 to-red-500',
+                    topics: [
+                        { id: 'threat-intel', title: 'Threat Intelligence', icon: '🎯' },
+                        { id: 'apt', title: 'Advanced Persistent Threats', icon: '👻' },
+                        { id: 'red-blue-team', title: 'Red Team vs Blue Team', icon: '⚔️' },
+                        { id: 'career', title: 'Career Paths', icon: '💼' }
+                    ]
+                }
             ];
 
             const topicContent = {
-                intro: {
-                    title: "Introduction to Incident Response",
+                welcome: {
+                    title: "Welcome to Cybersecurity Learning",
+                    subtitle: "Your Journey into Information Security Begins Here",
                     content: (
-                        <div>
-                            <h3 className="text-2xl font-bold mb-4">What is Incident Response?</h3>
-                            <p className="mb-4">Incident Response (IR) is a structured approach to addressing and managing the aftermath of a security breach or cyberattack.</p>
-                            
-                            <h4 className="text-xl font-semibold mt-6 mb-3">The IR Lifecycle</h4>
-                            <ol className="list-decimal list-inside space-y-2 mb-4">
-                                <li><strong>Preparation:</strong> Develop policies, train teams, deploy tools</li>
-                                <li><strong>Detection & Analysis:</strong> Identify and investigate incidents</li>
-                                <li><strong>Containment:</strong> Prevent incident from spreading</li>
-                                <li><strong>Eradication:</strong> Remove the threat</li>
-                                <li><strong>Recovery:</strong> Restore normal operations</li>
-                                <li><strong>Lessons Learned:</strong> Review and improve</li>
-                            </ol>
+                        <div className="space-y-6">
+                            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-8 rounded-2xl border border-purple-200">
+                                <h3 className="text-3xl font-bold text-gray-900 mb-4">Why Cybersecurity Matters</h3>
+                                <p className="text-lg text-gray-700 mb-4 leading-relaxed">
+                                    In our interconnected digital world, cybersecurity has become one of the most critical fields. 
+                                    Every day, organizations face thousands of cyberattacks - from simple phishing emails to sophisticated 
+                                    nation-state campaigns. Learning cybersecurity isn't just about protecting systems; it's about 
+                                    <strong className="text-purple-700"> safeguarding privacy, data, and digital infrastructure</strong> that our 
+                                    society depends on.
+                                </p>
+                            </div>
 
-                            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mt-6">
-                                <p className="font-semibold">Key Takeaway:</p>
-                                <p>Effective IR requires preparation, quick detection, decisive action, and continuous improvement.</p>
+                            <div className="grid md:grid-cols-3 gap-6">
+                                <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-blue-500">
+                                    <div className="text-4xl mb-4">🎯</div>
+                                    <h4 className="text-xl font-bold text-gray-900 mb-2">Learn by Doing</h4>
+                                    <p className="text-gray-600">
+                                        This platform combines theoretical knowledge with hands-on practice. You'll face real-world 
+                                        scenarios in a safe, controlled environment.
+                                    </p>
+                                </div>
+                                <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-green-500">
+                                    <div className="text-4xl mb-4">📈</div>
+                                    <h4 className="text-xl font-bold text-gray-900 mb-2">Progressive Learning</h4>
+                                    <p className="text-gray-600">
+                                        Start with fundamentals and advance to complex scenarios. Each topic builds on previous knowledge 
+                                        to create a solid foundation.
+                                    </p>
+                                </div>
+                                <div className="bg-white p-6 rounded-xl shadow-lg border-t-4 border-purple-500">
+                                    <div className="text-4xl mb-4">🏆</div>
+                                    <h4 className="text-xl font-bold text-gray-900 mb-2">Practical Skills</h4>
+                                    <p className="text-gray-600">
+                                        Develop skills that translate directly to professional cybersecurity roles - from SOC analyst 
+                                        to penetration tester.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="bg-yellow-50 border-l-4 border-yellow-500 p-6 rounded-lg">
+                                <div className="flex items-start">
+                                    <div className="text-3xl mr-4">⚠️</div>
+                                    <div>
+                                        <h4 className="text-lg font-bold text-yellow-900 mb-2">Ethical Use Only</h4>
+                                        <p className="text-yellow-800">
+                                            The techniques you learn here are powerful. <strong>Always use them ethically and legally.</strong> 
+                                            Only test systems you own or have explicit written permission to assess. Unauthorized access 
+                                            is illegal and can result in severe penalties.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-8 rounded-2xl text-white">
+                                <h3 className="text-2xl font-bold mb-4">🚀 Ready to Start?</h3>
+                                <p className="text-lg mb-6 opacity-90">
+                                    Navigate through topics using the sidebar. Start with fundamentals if you're new, or jump to 
+                                    specific topics that interest you. Each section includes theory, examples, and links to 
+                                    practical exercises.
+                                </p>
+                                <div className="flex flex-wrap gap-3">
+                                    <a href="simulator.html" className="px-6 py-3 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-gray-100 transition">
+                                        Launch Training Center
+                                    </a>
+                                    <button 
+                                        onClick={() => { setSelectedCategory('attacks'); setSelectedTopic('phishing'); }}
+                                        className="px-6 py-3 bg-indigo-700 text-white rounded-lg font-semibold hover:bg-indigo-800 transition"
+                                    >
+                                        Start Learning
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ),
+                    relatedLabs: [],
                     resources: [
-                        { title: "NIST IR Guide", url: "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-61r2.pdf" },
-                        { title: "SANS IR Process", url: "https://www.sans.org/white-papers/33901/" }
+                        { title: "NIST Cybersecurity Framework", url: "https://www.nist.gov/cyberframework" },
+                        { title: "OWASP Top 10", url: "https://owasp.org/www-project-top-ten/" },
+                        { title: "CIS Controls", url: "https://www.cisecurity.org/controls" }
                     ]
                 },
+                
+                overview: {
+                    title: "The Cybersecurity Landscape",
+                    subtitle: "Understanding the Modern Threat Environment",
+                    content: (
+                        <div className="space-y-6">
+                            <div className="prose max-w-none">
+                                <p className="text-lg text-gray-700 leading-relaxed">
+                                    The cybersecurity landscape is constantly evolving. Understanding the ecosystem - including 
+                                    threat actors, attack vectors, and defense strategies - is crucial for any security professional.
+                                </p>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-xl shadow-lg">
+                                <h3 className="text-2xl font-bold mb-6">Threat Actor Types</h3>
+                                <div className="space-y-4">
+                                    <div className="flex items-start p-4 bg-red-50 rounded-lg">
+                                        <div className="text-3xl mr-4">🎭</div>
+                                        <div>
+                                            <h4 className="font-bold text-lg text-red-900">Nation-State Actors (APTs)</h4>
+                                            <p className="text-red-800">Government-sponsored groups with vast resources. Focus on espionage, 
+                                            sabotage, and strategic intelligence gathering. Examples: APT28, APT29, Lazarus Group.</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-start p-4 bg-orange-50 rounded-lg">
+                                        <div className="text-3xl mr-4">💰</div>
+                                        <div>
+                                            <h4 className="font-bold text-lg text-orange-900">Cybercriminals</h4>
+                                            <p className="text-orange-800">Motivated by financial gain. Deploy ransomware, steal credentials, 
+                                            engage in fraud. Often operate as organized crime syndicates with sophisticated operations.</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-start p-4 bg-yellow-50 rounded-lg">
+                                        <div className="text-3xl mr-4">🎪</div>
+                                        <div>
+                                            <h4 className="font-bold text-lg text-yellow-900">Hacktivists</h4>
+                                            <p className="text-yellow-800">Driven by political or social causes. Target organizations to make 
+                                            statements, leak data, or disrupt operations. Examples: Anonymous, LulzSec.</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-start p-4 bg-blue-50 rounded-lg">
+                                        <div className="text-3xl mr-4">👤</div>
+                                        <div>
+                                            <h4 className="font-bold text-lg text-blue-900">Insider Threats</h4>
+                                            <p className="text-blue-800">Current or former employees with legitimate access. Can be malicious 
+                                            (revenge, profit) or accidental (negligence, social engineering victims).</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-start p-4 bg-purple-50 rounded-lg">
+                                        <div className="text-3xl mr-4">🔰</div>
+                                        <div>
+                                            <h4 className="font-bold text-lg text-purple-900">Script Kiddies</h4>
+                                            <p className="text-purple-800">Low-skill attackers using pre-made tools. While less sophisticated, 
+                                            can still cause damage through automated attacks and opportunistic exploitation.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-xl shadow-lg">
+                                <h3 className="text-2xl font-bold mb-6">The Cyber Kill Chain</h3>
+                                <p className="text-gray-700 mb-4">
+                                    Developed by Lockheed Martin, the Cyber Kill Chain describes the stages of a cyberattack:
+                                </p>
+                                <div className="attack-chain">
+                                    <div className="attack-step">
+                                        <div className="bg-white p-4 rounded-lg shadow border-l-4 border-purple-500">
+                                            <h4 className="font-bold text-lg">1. Reconnaissance</h4>
+                                            <p className="text-sm text-gray-600">Gathering information about the target (OSINT, scanning, social media research)</p>
+                                        </div>
+                                    </div>
+                                    <div className="attack-step">
+                                        <div className="bg-white p-4 rounded-lg shadow border-l-4 border-purple-500">
+                                            <h4 className="font-bold text-lg">2. Weaponization</h4>
+                                            <p className="text-sm text-gray-600">Creating malicious payload (malware, exploit kit, malicious document)</p>
+                                        </div>
+                                    </div>
+                                    <div className="attack-step">
+                                        <div className="bg-white p-4 rounded-lg shadow border-l-4 border-purple-500">
+                                            <h4 className="font-bold text-lg">3. Delivery</h4>
+                                            <p className="text-sm text-gray-600">Transmitting weapon to target (email, website, USB, removable media)</p>
+                                        </div>
+                                    </div>
+                                    <div className="attack-step">
+                                        <div className="bg-white p-4 rounded-lg shadow border-l-4 border-purple-500">
+                                            <h4 className="font-bold text-lg">4. Exploitation</h4>
+                                            <p className="text-sm text-gray-600">Triggering vulnerability to execute code on victim's system</p>
+                                        </div>
+                                    </div>
+                                    <div className="attack-step">
+                                        <div className="bg-white p-4 rounded-lg shadow border-l-4 border-purple-500">
+                                            <h4 className="font-bold text-lg">5. Installation</h4>
+                                            <p className="text-sm text-gray-600">Installing malware/backdoor for persistent access</p>
+                                        </div>
+                                    </div>
+                                    <div className="attack-step">
+                                        <div className="bg-white p-4 rounded-lg shadow border-l-4 border-purple-500">
+                                            <h4 className="font-bold text-lg">6. Command & Control (C2)</h4>
+                                            <p className="text-sm text-gray-600">Establishing communication channel with compromised system</p>
+                                        </div>
+                                    </div>
+                                    <div className="attack-step">
+                                        <div className="bg-white p-4 rounded-lg shadow border-l-4 border-purple-500">
+                                            <h4 className="font-bold text-lg">7. Actions on Objectives</h4>
+                                            <p className="text-sm text-gray-600">Achieving goal (data exfiltration, destruction, ransomware deployment)</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="bg-gradient-to-br from-red-50 to-pink-50 p-6 rounded-xl border border-red-200">
+                                    <h4 className="text-xl font-bold text-red-900 mb-3">🎯 Common Attack Vectors</h4>
+                                    <ul className="space-y-2 text-red-800">
+                                        <li>• <strong>Email:</strong> Phishing, malicious attachments</li>
+                                        <li>• <strong>Web:</strong> SQL injection, XSS, CSRF</li>
+                                        <li>• <strong>Network:</strong> Man-in-the-middle, packet sniffing</li>
+                                        <li>• <strong>Application:</strong> Buffer overflows, code injection</li>
+                                        <li>• <strong>Social Engineering:</strong> Manipulation, pretexting</li>
+                                        <li>• <strong>Physical:</strong> Unauthorized access, device theft</li>
+                                    </ul>
+                                </div>
+
+                                <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-xl border border-green-200">
+                                    <h4 className="text-xl font-bold text-green-900 mb-3">🛡️ Defense in Depth</h4>
+                                    <ul className="space-y-2 text-green-800">
+                                        <li>• <strong>Perimeter Security:</strong> Firewalls, IDS/IPS</li>
+                                        <li>• <strong>Network Security:</strong> Segmentation, VPNs</li>
+                                        <li>• <strong>Endpoint Protection:</strong> Antivirus, EDR</li>
+                                        <li>• <strong>Application Security:</strong> WAF, code review</li>
+                                        <li>• <strong>Data Security:</strong> Encryption, DLP</li>
+                                        <li>• <strong>User Security:</strong> Training, MFA</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    ),
+                    relatedLabs: ['simulation_dashboard', 'quiz'],
+                    resources: [
+                        { title: "Lockheed Martin Cyber Kill Chain", url: "https://www.lockheedmartin.com/en-us/capabilities/cyber/cyber-kill-chain.html" },
+                        { title: "MITRE ATT&CK Framework", url: "https://attack.mitre.org/" },
+                        { title: "Verizon Data Breach Report", url: "https://www.verizon.com/business/resources/reports/dbir/" }
+                    ]
+                },
+
                 phishing: {
-                    title: "Phishing Attacks",
+                    title: "Phishing & Social Engineering",
+                    subtitle: "The Human Element of Cybersecurity",
                     content: (
-                        <div>
-                            <h3 className="text-2xl font-bold mb-4">Understanding Phishing</h3>
-                            <p className="mb-4">Phishing is a social engineering attack where attackers trick victims into revealing sensitive information.</p>
-                            
-                            <h4 className="text-xl font-semibold mt-6 mb-3">Red Flags</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <div className="bg-red-50 p-4 rounded-lg">
-                                    <p className="font-semibold text-red-800">⚠️ Suspicious Sender</p>
-                                    <p className="text-sm">Check emails for misspellings</p>
-                                </div>
-                                <div className="bg-red-50 p-4 rounded-lg">
-                                    <p className="font-semibold text-red-800">⚠️ Urgent Language</p>
-                                    <p className="text-sm">"Act now!" creates false urgency</p>
-                                </div>
-                                <div className="bg-red-50 p-4 rounded-lg">
-                                    <p className="font-semibold text-red-800">⚠️ Suspicious Links</p>
-                                    <p className="text-sm">Hover to see real destination</p>
-                                </div>
-                                <div className="bg-red-50 p-4 rounded-lg">
-                                    <p className="font-semibold text-red-800">⚠️ Attachments</p>
-                                    <p className="text-sm">Unexpected .exe, .zip files</p>
+                        <div className="space-y-6">
+                            <div className="bg-gradient-to-r from-orange-50 to-red-50 p-6 rounded-xl border-l-4 border-orange-500">
+                                <h3 className="text-2xl font-bold text-gray-900 mb-3">Why Phishing Works</h3>
+                                <p className="text-lg text-gray-700 leading-relaxed">
+                                    Phishing remains one of the most effective attack vectors because it targets the weakest link 
+                                    in security: <strong>human psychology</strong>. Attackers exploit urgency, authority, trust, and 
+                                    curiosity to bypass technical controls entirely.
+                                </p>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-xl shadow-lg">
+                                <h3 className="text-2xl font-bold mb-4">Phishing Attack Types</h3>
+                                <div className="space-y-4">
+                                    <div className="p-4 bg-red-50 rounded-lg border-l-4 border-red-500">
+                                        <h4 className="font-bold text-lg">📧 Email Phishing (Spray and Pray)</h4>
+                                        <p className="text-sm text-gray-700 mt-2">
+                                            <strong>Method:</strong> Mass emails sent to thousands of recipients<br/>
+                                            <strong>Example:</strong> "Your Amazon account has been locked! Click here to verify."<br/>
+                                            <strong>Success Rate:</strong> 1-3% typically click malicious links
+                                        </p>
+                                    </div>
+
+                                    <div className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-500">
+                                        <h4 className="font-bold text-lg">🎯 Spear Phishing (Targeted)</h4>
+                                        <p className="text-sm text-gray-700 mt-2">
+                                            <strong>Method:</strong> Highly personalized emails targeting specific individuals<br/>
+                                            <strong>Example:</strong> Email appearing from CEO to CFO: "Please wire this urgent payment"<br/>
+                                            <strong>Success Rate:</strong> 30-50% due to personalization and research
+                                        </p>
+                                    </div>
+
+                                    <div className="p-4 bg-purple-50 rounded-lg border-l-4 border-purple-500">
+                                        <h4 className="font-bold text-lg">🦹 Whaling (Executive Targeting)</h4>
+                                        <p className="text-sm text-gray-700 mt-2">
+                                            <strong>Method:</strong> Spear phishing attacks targeting C-level executives<br/>
+                                            <strong>Example:</strong> Fake subpoena or legal notice to CEO<br/>
+                                            <strong>Impact:</strong> High-value targets with access to sensitive data
+                                        </p>
+                                    </div>
+
+                                    <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                                        <h4 className="font-bold text-lg">📱 Smishing (SMS Phishing)</h4>
+                                        <p className="text-sm text-gray-700 mt-2">
+                                            <strong>Method:</strong> Phishing via SMS text messages<br/>
+                                            <strong>Example:</strong> "Your package couldn't be delivered. Track: [malicious link]"<br/>
+                                            <strong>Trend:</strong> Increasing as people trust SMS more than email
+                                        </p>
+                                    </div>
+
+                                    <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
+                                        <h4 className="font-bold text-lg">📞 Vishing (Voice Phishing)</h4>
+                                        <p className="text-sm text-gray-700 mt-2">
+                                            <strong>Method:</strong> Phone calls impersonating legitimate entities<br/>
+                                            <strong>Example:</strong> "This is tech support. We detected suspicious activity..."<br/>
+                                            <strong>Tactic:</strong> Often combined with other phishing for multi-stage attacks
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
 
-                            <h4 className="text-xl font-semibold mt-6 mb-3">Response Actions</h4>
-                            <ol className="list-decimal list-inside space-y-2">
-                                <li>Don't click links or open attachments</li>
-                                <li>Report to security team</li>
-                                <li>Delete the email</li>
-                                <li>Change passwords if compromised</li>
-                            </ol>
+                            <div className="bg-white p-6 rounded-xl shadow-lg">
+                                <h3 className="text-2xl font-bold mb-4">🎭 Social Engineering Principles</h3>
+                                <p className="text-gray-700 mb-4">
+                                    Social engineering exploits psychological triggers. Understanding these helps both in recognizing 
+                                    attacks and (ethically) testing defenses:
+                                </p>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div className="p-4 bg-gray-50 rounded-lg">
+                                        <h4 className="font-bold text-red-600">⏰ Urgency & Scarcity</h4>
+                                        <p className="text-sm text-gray-600">"Act now or lose access!" Creates panic, bypasses rational thinking</p>
+                                    </div>
+                                    <div className="p-4 bg-gray-50 rounded-lg">
+                                        <h4 className="font-bold text-red-600">👔 Authority</h4>
+                                        <p className="text-sm text-gray-600">Impersonating bosses, IT, law enforcement. People obey authority figures</p>
+                                    </div>
+                                    <div className="p-4 bg-gray-50 rounded-lg">
+                                        <h4 className="font-bold text-red-600">💝 Trust & Liking</h4>
+                                        <p className="text-sm text-gray-600">Building rapport first, then exploiting. "Your friend sent you this!"</p>
+                                    </div>
+                                    <div className="p-4 bg-gray-50 rounded-lg">
+                                        <h4 className="font-bold text-red-600">😨 Fear</h4>
+                                        <p className="text-sm text-gray-600">"Your account will be closed!" Triggers immediate, unthinking action</p>
+                                    </div>
+                                    <div className="p-4 bg-gray-50 rounded-lg">
+                                        <h4 className="font-bold text-red-600">🎁 Greed & Curiosity</h4>
+                                        <p className="text-sm text-gray-600">"You won $1000!" or "See who viewed your profile" exploits desire</p>
+                                    </div>
+                                    <div className="p-4 bg-gray-50 rounded-lg">
+                                        <h4 className="font-bold text-red-600">👥 Social Proof</h4>
+                                        <p className="text-sm text-gray-600">"Everyone in your department has completed this" - following the crowd</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-xl shadow-lg">
+                                <h3 className="text-2xl font-bold mb-4">🚩 Red Flags - Identifying Phishing</h3>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div className="space-y-3">
+                                        <h4 className="font-semibold text-lg text-gray-900">Email Headers</h4>
+                                        <div className="code-block">
+                                            <span className="comment"># Legitimate email</span><br/>
+                                            From: support@<span className="string">amazon.com</span><br/><br/>
+                                            <span className="comment"># Phishing attempt</span><br/>
+                                            From: support@<span className="string">arnazon.com</span><br/>
+                                            From: no-reply@<span className="string">amazon-security.tk</span><br/>
+                                            From: "Amazon" &lt;hacker@<span className="string">evil.com</span>&gt;
+                                        </div>
+                                        <p className="text-sm text-gray-600">
+                                            ⚠️ Look for: Misspellings, unusual TLDs (.tk, .xyz), display name spoofing
+                                        </p>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <h4 className="font-semibold text-lg text-gray-900">Suspicious Links</h4>
+                                        <div className="code-block">
+                                            <span className="comment"># Hover over links to see real URL</span><br/>
+                                            Display: <span className="string">amazon.com/verify</span><br/>
+                                            Real URL: <span className="string">evil-site.com/phish</span><br/><br/>
+                                            <span className="comment"># URL obfuscation techniques</span><br/>
+                                            http://<span className="string">amazon.com.evil.com</span>/<br/>
+                                            http://<span className="string">192.168.1.1</span>/<br/>
+                                            http://<span className="string">bit.ly/Ax7Gk2</span> (shortened)
+                                        </div>
+                                        <p className="text-sm text-gray-600">
+                                            ⚠️ Never click links in suspicious emails. Navigate manually instead.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-300">
+                                    <h4 className="font-bold text-yellow-900 mb-2">🔍 Advanced Detection Techniques</h4>
+                                    <ul className="space-y-2 text-sm text-yellow-800">
+                                        <li>• <strong>Check email headers:</strong> Examine SPF, DKIM, DMARC authentication</li>
+                                        <li>• <strong>Analyze sender patterns:</strong> Unusual sending times, grammar errors</li>
+                                        <li>• <strong>Verify requests out-of-band:</strong> Call the person using known numbers</li>
+                                        <li>• <strong>Use VirusTotal:</strong> Check suspicious URLs/files before clicking</li>
+                                        <li>• <strong>Check SSL certificates:</strong> Look for HTTPS and valid certificates</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div className="bg-gradient-to-r from-red-500 to-pink-600 p-6 rounded-xl text-white">
+                                <h3 className="text-2xl font-bold mb-3">💡 Defense Strategies</h3>
+                                <div className="grid md:grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <h4 className="font-bold mb-2">Technical Controls</h4>
+                                        <ul className="space-y-1 opacity-90">
+                                            <li>• Email filtering and anti-spam</li>
+                                            <li>• SPF/DKIM/DMARC implementation</li>
+                                            <li>• Link sandboxing and rewriting</li>
+                                            <li>• Multi-factor authentication (MFA)</li>
+                                            <li>• Email banner warnings for external emails</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold mb-2">Human Controls</h4>
+                                        <ul className="space-y-1 opacity-90">
+                                            <li>• Security awareness training</li>
+                                            <li>• Phishing simulation campaigns</li>
+                                            <li>• Clear reporting procedures</li>
+                                            <li>• Reward vigilant employees</li>
+                                            <li>• Regular security reminders</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     ),
+                    relatedLabs: ['simulation_dashboard'],
                     resources: [
+                        { title: "Google Phishing Quiz", url: "https://phishingquiz.withgoogle.com/" },
                         { title: "Anti-Phishing Working Group", url: "https://apwg.org/" },
-                        { title: "Google Phishing Quiz", url: "https://phishingquiz.withgoogle.com/" }
+                        { title: "PhishTank - Phishing Database", url: "https://www.phishtank.com/" }
                     ]
                 },
-                malware: {
-                    title: "Malware Detection",
+
+                'privilege-esc': {
+                    title: "Privilege Escalation",
+                    subtitle: "From User to Root - Elevation of Privileges",
                     content: (
-                        <div>
-                            <h3 className="text-2xl font-bold mb-4">Malware Types and Detection</h3>
-                            
-                            <div className="space-y-4 mb-6">
-                                <div className="border-l-4 border-purple-500 pl-4">
-                                    <p className="font-bold">Virus</p>
-                                    <p className="text-sm text-gray-600">Attaches to files and spreads</p>
-                                </div>
-                                <div className="border-l-4 border-red-500 pl-4">
-                                    <p className="font-bold">Ransomware</p>
-                                    <p className="text-sm text-gray-600">Encrypts files, demands payment</p>
-                                </div>
-                                <div className="border-l-4 border-orange-500 pl-4">
-                                    <p className="font-bold">Trojan</p>
-                                    <p className="text-sm text-gray-600">Disguises as legitimate software</p>
-                                </div>
-                                <div className="border-l-4 border-yellow-500 pl-4">
-                                    <p className="font-bold">Spyware</p>
-                                    <p className="text-sm text-gray-600">Monitors user activity</p>
-                                </div>
+                        <div className="space-y-6">
+                            <div className="bg-gradient-to-r from-red-50 to-orange-50 p-6 rounded-xl border-l-4 border-red-500">
+                                <h3 className="text-2xl font-bold text-gray-900 mb-3">What is Privilege Escalation?</h3>
+                                <p className="text-lg text-gray-700 leading-relaxed">
+                                    Privilege escalation is the act of exploiting a bug, design flaw, or configuration oversight 
+                                    to gain elevated access to resources. After gaining initial access with low privileges, 
+                                    attackers seek <strong>root/administrator access</strong> to fully compromise the system.
+                                </p>
                             </div>
 
-                            <h4 className="text-xl font-semibold mt-6 mb-3">Detection Signs</h4>
-                            <ul className="list-disc list-inside space-y-2">
-                                <li>Unusual CPU or network activity</li>
-                                <li>Unexpected system crashes</li>
-                                <li>Unknown processes running</li>
-                                <li>Antivirus alerts</li>
-                            </ul>
-                        </div>
-                    ),
-                    resources: [
-                        { title: "Malwarebytes Blog", url: "https://www.malwarebytes.com/blog" },
-                        { title: "VirusTotal Scanner", url: "https://www.virustotal.com/" }
-                    ]
-                },
-                lateral: {
-                    title: "Lateral Movement",
-                    content: (
-                        <div>
-                            <h3 className="text-2xl font-bold mb-4">Lateral Movement in Networks</h3>
-                            <p className="mb-4">Techniques attackers use to move through networks after initial compromise.</p>
-                            
-                            <h4 className="text-xl font-semibold mt-6 mb-3">Common Techniques</h4>
-                            <div className="space-y-3 mb-6">
-                                <div className="bg-gray-50 p-4 rounded">
-                                    <p className="font-bold">Pass-the-Hash</p>
-                                    <p className="text-sm">Using captured hashes to authenticate</p>
-                                </div>
-                                <div className="bg-gray-50 p-4 rounded">
-                                    <p className="font-bold">RDP Hijacking</p>
-                                    <p className="text-sm">Taking over Remote Desktop sessions</p>
-                                </div>
-                            </div>
+                            <div className="bg-white p-6 rounded-xl shadow-lg">
+                                <h3 className="text-2xl font-bold mb-4">Types of Privilege Escalation</h3>
+                                <div className="space-y-4">
+                                    <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                                        <h4 className="font-bold text-lg">🔓 Vertical Privilege Escalation</h4>
+                                        <p className="text-gray-700 mt-2">
+                                            <strong>Goal:</strong> Gain higher-level privileges (user → admin → root)<br/>
+                                            <strong>Example:</strong> Low-privilege user exploiting vulnerability to become root<br/>
+                                            <strong>Impact:</strong> Complete system control, access all data
+                                        </p>
+                                    </div>
 
-                            <h4 className="text-xl font-semibold mt-6 mb-3">Detection Signs</h4>
-                            <ul className="list-disc list-inside space-y-2">
-                                <li>Unusual login patterns</li>
-                                <li>Accounts accessing unusual systems</li>
-                                <li>Excessive failed authentications</li>
-                            </ul>
-                        </div>
-                    ),
-                    resources: [
-                        { title: "MITRE ATT&CK", url: "https://attack.mitre.org/tactics/TA0008/" }
-                    ]
-                },
-                forensics: {
-                    title: "Digital Forensics",
-                    content: (
-                        <div>
-                            <h3 className="text-2xl font-bold mb-4">Digital Forensics Basics</h3>
-                            
-                            <div className="space-y-3 mb-6">
-                                <div className="flex items-start">
-                                    <div className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mr-3">1</div>
-                                    <div>
-                                        <p className="font-bold">Identification</p>
-                                        <p className="text-sm text-gray-600">Determine what evidence exists</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start">
-                                    <div className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mr-3">2</div>
-                                    <div>
-                                        <p className="font-bold">Preservation</p>
-                                        <p className="text-sm text-gray-600">Create forensic copies</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start">
-                                    <div className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mr-3">3</div>
-                                    <div>
-                                        <p className="font-bold">Analysis</p>
-                                        <p className="text-sm text-gray-600">Examine and interpret data</p>
+                                    <div className="p-4 bg-purple-50 rounded-lg border-l-4 border-purple-500">
+                                        <h4 className="font-bold text-lg">↔️ Horizontal Privilege Escalation</h4>
+                                        <p className="text-gray-700 mt-2">
+                                            <strong>Goal:</strong> Access resources of another user at same privilege level<br/>
+                                            <strong>Example:</strong> User A accessing User B's files/emails<br/>
+                                            <strong>Impact:</strong> Data breach, privacy violation
+                                        </p>
                                     </div>
                                 </div>
                             </div>
 
-                            <h4 className="text-xl font-semibold mt-6 mb-3">Key Tools</h4>
-                            <ul className="list-disc list-inside space-y-2">
-                                <li>Volatility (memory analysis)</li>
-                                <li>Autopsy (disk analysis)</li>
-                                <li>Wireshark (network analysis)</li>
-                            </ul>
-                        </div>
-                    ),
-                    resources: [
-                        { title: "SANS Digital Forensics", url: "https://www.sans.org/cyber-security-courses/advanced-incident-response/" }
-                    ]
-                },
-                response: {
-                    title: "Response Actions",
-                    content: (
-                        <div>
-                            <h3 className="text-2xl font-bold mb-4">Incident Response Actions</h3>
-                            
-                            <div className="space-y-4">
-                                <div className="bg-green-50 p-4 rounded-lg">
-                                    <p className="font-bold text-green-800">Monitor</p>
-                                    <p className="text-sm">For low-risk events. Increase logging and watch for escalation.</p>
-                                </div>
-                                <div className="bg-yellow-50 p-4 rounded-lg">
-                                    <p className="font-bold text-yellow-800">Isolate</p>
-                                    <p className="text-sm">For suspicious activity. Disconnect system from network.</p>
-                                </div>
-                                <div className="bg-orange-50 p-4 rounded-lg">
-                                    <p className="font-bold text-orange-800">Block IP/Domain</p>
-                                    <p className="text-sm">Add malicious sources to firewall blocklist.</p>
-                                </div>
-                                <div className="bg-red-50 p-4 rounded-lg">
-                                    <p className="font-bold text-red-800">Escalate</p>
-                                    <p className="text-sm">For critical threats. Alert senior security team immediately.</p>
+                            <div className="bg-white p-6 rounded-xl shadow-lg">
+                                <h3 className="text-2xl font-bold mb-4">🐧 Linux Privilege Escalation Techniques</h3>
+                                
+                                <div className="space-y-6">
+                                    <div>
+                                        <h4 className="font-bold text-lg mb-3">1. SUID/SGID Binaries</h4>
+                                        <p className="text-gray-700 mb-3">
+                                            Files with SUID (Set User ID) bit run with the owner's privileges, not the executor's. 
+                                            If misconfigured, they can be exploited for privilege escalation.
+                                        </p>
+                                        <div className="code-block">
+                                            <span className="comment"># Find SUID binaries</span><br/>
+                                            <span className="command">find</span> / -perm -4000 -type f 2&gt;/dev/null<br/><br/>
+                                            <span className="comment"># Example output</span><br/>
+                                            /usr/bin/sudo<br/>
+                                            /usr/bin/passwd<br/>
+                                            /usr/local/bin/backup  <span className="comment"># ← Suspicious!</span><br/><br/>
+                                            <span className="comment"># Check permissions</span><br/>
+                                            <span className="command">ls</span> -la /usr/local/bin/backup<br/>
+                                            <span className="string">-rwsr-xr-x 1 root root 16968 Oct 11 backup</span><br/>
+                                            <span className="comment"># ↑ The 's' indicates SUID bit</span>
+                                        </div>
+                                        <div className="mt-3 p-3 bg-red-50 rounded border border-red-200">
+                                            <p className="text-sm text-red-800">
+                                                <strong>Exploitation:</strong> If this binary has vulnerabilities or executes 
+                                                commands without proper sanitization, you can gain root privileges.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-bold text-lg mb-3">2. Sudo Misconfigurations</h4>
+                                        <p className="text-gray-700 mb-3">
+                                            Sudo allows users to run commands as other users. Misconfigurations can be exploited.
+                                        </p>
+                                        <div className="code-block">
+                                            <span className="comment"># Check sudo permissions</span><br/>
+                                            <span className="command">sudo</span> -l<br/><br/>
+                                            <span className="comment"># Example vulnerable output</span><br/>
+                                            User lowpriv may run the following commands:<br/>
+                                            &nbsp;&nbsp;&nbsp;&nbsp;(ALL) NOPASSWD: <span className="string">/usr/bin/find</span><br/><br/>
+                                            <span className="comment"># Exploit: find can execute commands!</span><br/>
+                                            <span className="command">sudo</span> find /home -exec /bin/bash \;<br/>
+                                            <span className="comment"># Now you have root shell!</span>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-bold text-lg mb-3">3. Kernel Exploits</h4>
+                                        <p className="text-gray-700 mb-3">
+                                            Exploiting vulnerabilities in the kernel itself to gain elevated privileges.
+                                        </p>
+                                        <div className="code-block">
+                                            <span className="comment"># Check kernel version</span><br/>
+                                            <span className="command">uname</span> -a<br/>
+                                            Linux server 4.4.0-21-generic #37-Ubuntu<br/><br/>
+                                            <span className="comment"># Search for known exploits</span><br/>
+                                            <span className="command">searchsploit</span> linux kernel 4.4<br/><br/>
+                                            <span className="comment"># Famous examples:</span><br/>
+                                            <span className="comment"># - Dirty COW (CVE-2016-5195)</span><br/>
+                                            <span className="comment"># - Baron Samedit (CVE-2021-3156)</span>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-bold text-lg mb-3">4. Writable Files & Paths</h4>
+                                        <div className="code-block">
+                                            <span className="comment"># Find world-writable files</span><br/>
+                                            <span className="command">find</span> / -writable -type f 2&gt;/dev/null<br/><br/>
+                                            <span className="comment"># Check PATH hijacking opportunities</span><br/>
+                                            <span className="command">echo</span> $PATH<br/>
+                                            /home/user/.local/bin:/usr/local/bin:/usr/bin<br/><br/>
+                                            <span className="comment"># If /home/user/.local/bin is writable and early in PATH</span><br/>
+                                            <span className="comment"># You can create malicious binaries that override system ones</span>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-bold text-lg mb-3">5. Cron Jobs</h4>
+                                        <div className="code-block">
+                                            <span className="comment"># Check cron jobs</span><br/>
+                                            <span className="command">cat</span> /etc/crontab<br/>
+                                            <span className="command">ls</span> -la /etc/cron.*<br/>
+                                            <span className="command">crontab</span> -l<br/><br/>
+                                            <span className="comment"># Look for scripts run as root that are writable</span><br/>
+                                            * * * * * root <span className="string">/opt/backup.sh</span><br/><br/>
+                                            <span className="command">ls</span> -la /opt/backup.sh<br/>
+                                            <span className="string">-rwxrwxrwx 1 root root 128 Oct 11 backup.sh</span><br/>
+                                            <span className="comment"># ↑ World-writable! Inject malicious code</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mt-6">
-                                <p className="font-semibold">Remember:</p>
-                                <p>Match response severity to threat level. Over-response wastes resources, under-response allows damage.</p>
+                            <div className="bg-white p-6 rounded-xl shadow-lg">
+                                <h3 className="text-2xl font-bold mb-4">🪟 Windows Privilege Escalation</h3>
+                                <div className="space-y-4">
+                                    <div className="p-4 bg-blue-50 rounded-lg">
+                                        <h4 className="font-bold">Unquoted Service Paths</h4>
+                                        <div className="code-block mt-2">
+                                            <span className="comment"># Vulnerable service path</span><br/>
+                                            C:\Program Files\Some Service\service.exe<br/><br/>
+                                            <span className="comment"># Windows tries these paths in order:</span><br/>
+                                            C:\Program.exe<br/>
+                                            C:\Program Files\Some.exe  <span className="comment"># ← Place malicious exe here!</span><br/>
+                                            C:\Program Files\Some Service\service.exe
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-purple-50 rounded-lg">
+                                        <h4 className="font-bold">Always Install Elevated</h4>
+                                        <p className="text-sm text-gray-700 mt-2">
+                                            If AlwaysInstallElevated registry keys are set, users can install MSI packages 
+                                            with SYSTEM privileges, allowing privilege escalation.
+                                        </p>
+                                    </div>
+
+                                    <div className="p-4 bg-green-50 rounded-lg">
+                                        <h4 className="font-bold">Token Impersonation</h4>
+                                        <p className="text-sm text-gray-700 mt-2">
+                                            Tools like Incognito and Juicy Potato exploit Windows tokens to impersonate 
+                                            higher-privileged users, including SYSTEM.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 rounded-xl text-white">
+                                <h3 className="text-2xl font-bold mb-3">🛡️ Defense Strategies</h3>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div>
+                                        <h4 className="font-bold mb-2">Prevention</h4>
+                                        <ul className="space-y-1 text-sm opacity-90">
+                                            <li>• Principle of least privilege</li>
+                                            <li>• Regular security audits</li>
+                                            <li>• Patch management</li>
+                                            <li>• Remove unnecessary SUID binaries</li>
+                                            <li>• Restrict sudo access</li>
+                                            <li>• File system permissions review</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold mb-2">Detection</h4>
+                                        <ul className="space-y-1 text-sm opacity-90">
+                                            <li>• Monitor privilege changes</li>
+                                            <li>• Log sudo command execution</li>
+                                            <li>• File integrity monitoring (FIM)</li>
+                                            <li>• Unusual process monitoring</li>
+                                            <li>• Behavioral analysis</li>
+                                            <li>• Security Information and Event Management (SIEM)</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-yellow-50 border-l-4 border-yellow-500 p-6 rounded-lg">
+                                <h4 className="font-bold text-yellow-900 mb-2">🎯 Practice Lab Available</h4>
+                                <p className="text-yellow-800 mb-4">
+                                    Test your privilege escalation skills in our interactive Privilege Escalation Challenge. 
+                                    Start as a low-privilege user and work your way to root access!
+                                </p>
+                                <a href="privilege_escalation.html" className="inline-block px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 font-semibold transition">
+                                    Launch Privilege Escalation Lab →
+                                </a>
                             </div>
                         </div>
                     ),
-                    resources: []
+                    relatedLabs: ['privilege_escalation'],
+                    resources: [
+                        { title: "GTFOBins - Unix Privilege Escalation", url: "https://gtfobins.github.io/" },
+                        { title: "LOLBAS - Windows Binaries", url: "https://lolbas-project.github.io/" },
+                        { title: "PayloadsAllTheThings - Privesc", url: "https://github.com/swisskyrepo/PayloadsAllTheThings/blob/master/Methodology%20and%20Resources/Linux%20-%20Privilege%20Escalation.md" }
+                    ]
+                },
+
+                'password-security': {
+                    title: "Password Security & Cracking",
+                    subtitle: "Understanding Password Attacks and Defense",
+                    content: (
+                        <div className="space-y-6">
+                            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-xl border-l-4 border-purple-500">
+                                <h3 className="text-2xl font-bold text-gray-900 mb-3">Why Passwords Matter</h3>
+                                <p className="text-lg text-gray-700 leading-relaxed">
+                                    Despite advances in authentication, passwords remain the primary method of access control. 
+                                    Understanding how they're attacked - and how to crack them ethically during authorized 
+                                    security assessments - is crucial for both attackers and defenders.
+                                </p>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-xl shadow-lg">
+                                <h3 className="text-2xl font-bold mb-4">Password Hashing Algorithms</h3>
+                                <div className="space-y-4">
+                                    <div className="p-4 bg-red-50 rounded-lg border-l-4 border-red-500">
+                                        <h4 className="font-bold text-lg flex items-center">
+                                            ❌ MD5 (Message Digest 5)
+                                            <span className="ml-2 px-2 py-1 bg-red-600 text-white text-xs rounded">DEPRECATED</span>
+                                        </h4>
+                                        <div className="mt-2 space-y-2">
+                                            <p className="text-sm text-gray-700">
+                                                <strong>Output:</strong> 32 hex characters (128 bits)<br/>
+                                                <strong>Speed:</strong> Extremely fast (~50 billion hashes/second on GPU)<br/>
+                                                <strong>Weakness:</strong> No salt, vulnerable to rainbow tables, collision attacks
+                                            </p>
+                                            <div className="code-block text-xs">
+                                                <span className="comment"># Example MD5 hash</span><br/>
+                                                password → <span className="string">5f4dcc3b5aa765d61d8327deb882cf99</span><br/>
+                                                admin → <span className="string">21232f297a57a5a743894a0e4a801fc3</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-500">
+                                        <h4 className="font-bold text-lg flex items-center">
+                                            ⚠️ SHA-1 (Secure Hash Algorithm 1)
+                                            <span className="ml-2 px-2 py-1 bg-orange-600 text-white text-xs rounded">WEAK</span>
+                                        </h4>
+                                        <div className="mt-2 space-y-2">
+                                            <p className="text-sm text-gray-700">
+                                                <strong>Output:</strong> 40 hex characters (160 bits)<br/>
+                                                <strong>Speed:</strong> Very fast (~20 billion hashes/second on GPU)<br/>
+                                                <strong>Status:</strong> Deprecated by NIST, collision attacks demonstrated
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-500">
+                                        <h4 className="font-bold text-lg flex items-center">
+                                            ⚠️ NTLM (NT LAN Manager)
+                                            <span className="ml-2 px-2 py-1 bg-yellow-600 text-white text-xs rounded">LEGACY</span>
+                                        </h4>
+                                        <div className="mt-2 space-y-2">
+                                            <p className="text-sm text-gray-700">
+                                                <strong>Used by:</strong> Windows systems<br/>
+                                                <strong>Output:</strong> 32 hex characters<br/>
+                                                <strong>Weakness:</strong> No salting, vulnerable to pass-the-hash attacks
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
+                                        <h4 className="font-bold text-lg flex items-center">
+                                            ✅ bcrypt
+                                            <span className="ml-2 px-2 py-1 bg-green-600 text-white text-xs rounded">RECOMMENDED</span>
+                                        </h4>
+                                        <div className="mt-2 space-y-2">
+                                            <p className="text-sm text-gray-700">
+                                                <strong>Features:</strong> Built-in salting, adaptive (configurable work factor)<br/>
+                                                <strong>Speed:</strong> Intentionally slow (~5 hashes/second)<br/>
+                                                <strong>Status:</strong> Industry standard for password storage
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                                        <h4 className="font-bold text-lg flex items-center">
+                                            ✅ Argon2
+                                            <span className="ml-2 px-2 py-1 bg-blue-600 text-white text-xs rounded">BEST</span>
+                                        </h4>
+                                        <div className="mt-2 space-y-2">
+                                            <p className="text-sm text-gray-700">
+                                                <strong>Features:</strong> Memory-hard, resistant to GPU/ASIC attacks<br/>
+                                                <strong>Winner:</strong> Password Hashing Competition 2015<br/>
+                                                <strong>Status:</strong> Recommended by OWASP for new applications
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-xl shadow-lg">
+                                <h3 className="text-2xl font-bold mb-4">🔨 Password Cracking Techniques</h3>
+                                
+                                <div className="space-y-6">
+                                    <div>
+                                        <h4 className="font-bold text-lg mb-3">1. Dictionary Attack</h4>
+                                        <p className="text-gray-700 mb-3">
+                                            Uses a pre-compiled list of common passwords (wordlist). Fast but limited to known passwords.
+                                        </p>
+                                        <div className="code-block">
+                                            <span className="comment"># Using hashcat with wordlist</span><br/>
+                                            <span className="command">hashcat</span> -m 0 -a 0 hashes.txt rockyou.txt<br/>
+                                            <span className="comment">#        │  │  │           │            │</span><br/>
+                                            <span className="comment">#        │  │  │           │            └─ Wordlist</span><br/>
+                                            <span className="comment">#        │  │  │           └─ Hash file</span><br/>
+                                            <span className="comment">#        │  │  └─ Attack mode (0=dictionary)</span><br/>
+                                            <span className="comment">#        │  └─ Hash type (0=MD5)</span><br/>
+                                            <span className="comment">#        └─ Program name</span><br/><br/>
+                                            <span className="comment"># Popular wordlists:</span><br/>
+                                            <span className="comment"># - rockyou.txt (14M passwords)</span><br/>
+                                            <span className="comment"># - SecLists (various categories)</span><br/>
+                                            <span className="comment"># - CrackStation (1.5B passwords)</span>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-bold text-lg mb-3">2. Brute Force Attack</h4>
+                                        <p className="text-gray-700 mb-3">
+                                            Tries every possible combination. Guaranteed to work eventually, but extremely slow.
+                                        </p>
+                                        <div className="code-block">
+                                            <span className="comment"># Brute force all combinations</span><br/>
+                                            <span className="command">hashcat</span> -m 0 -a 3 hashes.txt ?a?a?a?a?a?a<br/>
+                                            <span className="comment">#                              │</span><br/>
+                                            <span className="comment">#                              └─ Mask: ?a = all characters</span><br/><br/>
+                                            <span className="comment"># Character sets:</span><br/>
+                                            ?l = lowercase (a-z)<br/>
+                                            ?u = uppercase (A-Z)<br/>
+                                            ?d = digits (0-9)<br/>
+                                            ?s = special characters<br/>
+                                            ?a = all characters<br/><br/>
+                                            <span className="comment"># Example: 8-char password with lowercase+digits</span><br/>
+                                            <span className="command">hashcat</span> -m 0 -a 3 hashes.txt ?l?l?l?l?d?d?d?d
+                                        </div>
+                                        <div className="mt-3 p-3 bg-yellow-50 rounded border border-yellow-200">
+                                            <p className="text-sm text-yellow-800">
+                                                <strong>Time Complexity:</strong> 8-char password with all characters = 
+                                                95^8 = 6.6 quadrillion combinations. Even at 50B/sec, takes ~37 hours!
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-bold text-lg mb-3">3. Hybrid Attack</h4>
+                                        <p className="text-gray-700 mb-3">
+                                            Combines dictionary words with modifications (appending numbers, substitutions).
+                                        </p>
+                                        <div className="code-block">
+                                            <span className="comment"># Dictionary + rules</span><br/>
+                                            <span className="command">hashcat</span> -m 0 -a 0 hashes.txt rockyou.txt -r best64.rule<br/><br/>
+                                            <span className="comment"># Common transformations:</span><br/>
+                                            password → Password (capitalize)<br/>
+                                            password → password123 (append digits)<br/>
+                                            password → p@ssw0rd (leet speak)<br/>
+                                            password → drowssap (reverse)
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-bold text-lg mb-3">4. Rainbow Tables</h4>
+                                        <p className="text-gray-700 mb-3">
+                                            Pre-computed hash tables for instant lookup. Only works against unsalted hashes.
+                                        </p>
+                                        <div className="code-block">
+                                            <span className="comment"># Rainbow table attack (using RainbowCrack)</span><br/>
+                                            <span className="command">rcrack</span> /path/to/tables -h 5f4dcc3b5aa765d61d8327deb882cf99<br/><br/>
+                                            <span className="comment"># Instant result: password</span><br/><br/>
+                                            <span className="comment"># Defense: Use salted hashes!</span><br/>
+                                            <span className="comment"># Salt makes rainbow tables ineffective</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-xl shadow-lg">
+                                <h3 className="text-2xl font-bold mb-4">🛠️ Password Cracking Tools</h3>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                                        <h4 className="font-bold text-lg mb-2">Hashcat</h4>
+                                        <p className="text-sm text-gray-700 mb-3">
+                                            World's fastest password cracker. GPU-accelerated, supports 300+ hash types.
+                                        </p>
+                                        <div className="text-xs space-y-1 text-gray-600">
+                                            <div>✓ Multi-GPU support</div>
+                                            <div>✓ Rule-based attacks</div>
+                                            <div>✓ Mask attacks</div>
+                                            <div>✓ Hybrid attacks</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                        <h4 className="font-bold text-lg mb-2">John the Ripper</h4>
+                                        <p className="text-sm text-gray-700 mb-3">
+                                            Classic password cracker. Simple to use, automatic hash detection.
+                                        </p>
+                                        <div className="text-xs space-y-1 text-gray-600">
+                                            <div>✓ Auto format detection</div>
+                                            <div>✓ Incremental mode</div>
+                                            <div>✓ Custom rules</div>
+                                            <div>✓ Easy for beginners</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                                        <h4 className="font-bold text-lg mb-2">Hydra</h4>
+                                        <p className="text-sm text-gray-700 mb-3">
+                                            Network login cracker. Tests passwords against services (SSH, FTP, HTTP).
+                                        </p>
+                                        <div className="text-xs space-y-1 text-gray-600">
+                                            <div>✓ 50+ protocols</div>
+                                            <div>✓ Parallel connections</div>
+                                            <div>✓ Online attacks</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-orange-50 rounded-lg border border-orange-200">
+                                        <h4 className="font-bold text-lg mb-2">Mimikatz</h4>
+                                        <p className="text-sm text-gray-700 mb-3">
+                                            Windows credential extraction tool. Dumps passwords from memory.
+                                        </p>
+                                        <div className="text-xs space-y-1 text-gray-600">
+                                            <div>✓ Extract NTLM hashes</div>
+                                            <div>✓ Kerberos tickets</div>
+                                            <div>✓ Pass-the-hash</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-gradient-to-r from-red-500 to-pink-600 p-6 rounded-xl text-white">
+                                <h3 className="text-2xl font-bold mb-4">🛡️ Password Security Best Practices</h3>
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <div>
+                                        <h4 className="font-bold mb-3">For Users</h4>
+                                        <ul className="space-y-2 text-sm opacity-90">
+                                            <li>✓ Use 12+ characters minimum</li>
+                                            <li>✓ Mix uppercase, lowercase, numbers, symbols</li>
+                                            <li>✓ Avoid dictionary words</li>
+                                            <li>✓ Use unique passwords per site</li>
+                                            <li>✓ Use password manager (LastPass, 1Password, Bitwarden)</li>
+                                            <li>✓ Enable MFA everywhere possible</li>
+                                            <li>✓ Check if passwords were breached (HaveIBeenPwned)</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold mb-3">For Developers</h4>
+                                        <ul className="space-y-2 text-sm opacity-90">
+                                            <li>✓ Use bcrypt/scrypt/Argon2</li>
+                                            <li>✓ Never store plaintext passwords</li>
+                                            <li>✓ Implement rate limiting</li>
+                                            <li>✓ Enforce strong password policies</li>
+                                            <li>✓ Use unique salts per password</li>
+                                            <li>✓ Implement account lockout</li>
+                                            <li>✓ Monitor for credential stuffing</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-yellow-50 border-l-4 border-yellow-500 p-6 rounded-lg">
+                                <h4 className="font-bold text-yellow-900 mb-2">🎯 Practice Lab Available</h4>
+                                <p className="text-yellow-800 mb-4">
+                                    Learn password cracking hands-on! Use real tools (hashcat, john) to crack hashes 
+                                    in a safe environment and understand why strong passwords matter.
+                                </p>
+                                <a href="password_cracking.html" className="inline-block px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 font-semibold transition">
+                                    Launch Password Cracking Lab →
+                                </a>
+                            </div>
+                        </div>
+                    ),
+                    relatedLabs: ['password_cracking'],
+                    resources: [
+                        { title: "Hashcat Documentation", url: "https://hashcat.net/wiki/" },
+                        { title: "Have I Been Pwned", url: "https://haveibeenpwned.com/" },
+                        { title: "SecLists - Wordlists", url: "https://github.com/danielmiessler/SecLists" }
+                    ]
+                },
+
+                'log-analysis': {
+                    title: "Log Analysis Fundamentals",
+                    subtitle: "Finding Needles in Haystacks - Security Log Analysis",
+                    content: (
+                        <div className="space-y-6">
+                            <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-6 rounded-xl border-l-4 border-blue-500">
+                                <h3 className="text-2xl font-bold text-gray-900 mb-3">Why Log Analysis Matters</h3>
+                                <p className="text-lg text-gray-700 leading-relaxed">
+                                    Logs are the <strong>digital breadcrumbs</strong> that tell the story of what happened in your systems. 
+                                    Security analysts spend significant time analyzing logs to detect threats, investigate incidents, 
+                                    and understand attack patterns. Mastering log analysis is essential for any cybersecurity professional.
+                                </p>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-xl shadow-lg">
+                                <h3 className="text-2xl font-bold mb-4">Types of Security Logs</h3>
+                                <div className="space-y-4">
+                                    <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                                        <h4 className="font-bold text-lg">🖥️ System Logs</h4>
+                                        <p className="text-sm text-gray-700 mt-2">
+                                            <strong>Location (Linux):</strong> /var/log/syslog, /var/log/messages<br/>
+                                            <strong>Location (Windows):</strong> Event Viewer → System<br/>
+                                            <strong>Contains:</strong> System events, service starts/stops, kernel messages, hardware issues
+                                        </p>
+                                        <div className="code-block text-xs mt-3">
+                                            Oct 16 14:23:45 server sshd[1234]: Accepted publickey for admin from 192.168.1.100<br/>
+                                            Oct 16 14:25:12 server kernel: Out of memory: Kill process 5678 (apache2)
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-green-50 rounded-lg border-l-4 border-green-500">
+                                        <h4 className="font-bold text-lg">🔐 Authentication Logs</h4>
+                                        <p className="text-sm text-gray-700 mt-2">
+                                            <strong>Location (Linux):</strong> /var/log/auth.log, /var/log/secure<br/>
+                                            <strong>Location (Windows):</strong> Event Viewer → Security<br/>
+                                            <strong>Contains:</strong> Login attempts, authentication failures, sudo commands, user creation
+                                        </p>
+                                        <div className="code-block text-xs mt-3">
+                                            <span className="comment"># Successful login</span><br/>
+                                            Oct 16 09:15:23 server sshd[9876]: Accepted password for user1 from 10.0.0.50<br/><br/>
+                                            <span className="comment"># Failed login (potential attack)</span><br/>
+                                            Oct 16 09:15:45 server sshd[9877]: Failed password for admin from 203.0.113.99<br/>
+                                            Oct 16 09:15:47 server sshd[9878]: Failed password for admin from 203.0.113.99<br/>
+                                            Oct 16 09:15:49 server sshd[9879]: Failed password for admin from 203.0.113.99
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-purple-50 rounded-lg border-l-4 border-purple-500">
+                                        <h4 className="font-bold text-lg">🌐 Web Server Logs</h4>
+                                        <p className="text-sm text-gray-700 mt-2">
+                                            <strong>Location:</strong> /var/log/apache2/access.log, /var/log/nginx/access.log<br/>
+                                            <strong>Contains:</strong> HTTP requests, status codes, user agents, referrers
+                                        </p>
+                                        <div className="code-block text-xs mt-3">
+                                            192.168.1.100 - - [16/Oct/2025:14:30:22] "GET /admin.php HTTP/1.1" 200 1234<br/>
+                                            <span className="string">203.0.113.50</span> - - [16/Oct/2025:14:31:05] <span className="string">"GET /wp-admin/../../../etc/passwd"</span> <span className="comment">404</span><br/>
+                                            <span className="comment"># ↑ Path traversal attempt!</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-red-50 rounded-lg border-l-4 border-red-500">
+                                        <h4 className="font-bold text-lg">🔥 Firewall Logs</h4>
+                                        <p className="text-sm text-gray-700 mt-2">
+                                            <strong>Contains:</strong> Allowed/blocked connections, port scans, DDoS attempts
+                                        </p>
+                                        <div className="code-block text-xs mt-3">
+                                            <span className="comment"># Normal traffic</span><br/>
+                                            ACCEPT: IN=eth0 SRC=192.168.1.50 DST=192.168.1.10 PROTO=TCP DPT=443<br/><br/>
+                                            <span className="comment"># Blocked port scan</span><br/>
+                                            <span className="string">DROP: IN=eth0 SRC=203.0.113.100 DST=192.168.1.10 PROTO=TCP DPT=22</span><br/>
+                                            <span className="string">DROP: IN=eth0 SRC=203.0.113.100 DST=192.168.1.10 PROTO=TCP DPT=23</span><br/>
+                                            <span className="string">DROP: IN=eth0 SRC=203.0.113.100 DST=192.168.1.10 PROTO=TCP DPT=80</span>
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-orange-50 rounded-lg border-l-4 border-orange-500">
+                                        <h4 className="font-bold text-lg">🔍 Application Logs</h4>
+                                        <p className="text-sm text-gray-700 mt-2">
+                                            <strong>Contains:</strong> Application-specific events, errors, transactions, debug info
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-xl shadow-lg">
+                                <h3 className="text-2xl font-bold mb-4">🚨 Common Attack Patterns in Logs</h3>
+                                
+                                <div className="space-y-6">
+                                    <div>
+                                        <h4 className="font-bold text-lg mb-3 text-red-600">1. Brute Force Attacks</h4>
+                                        <p className="text-gray-700 mb-3">
+                                            Multiple failed login attempts from same source in short time period.
+                                        </p>
+                                        <div className="code-block text-xs">
+                                            <span className="comment"># Look for patterns like this:</span><br/>
+                                            14:25:01 Failed password for admin from 203.0.113.50<br/>
+                                            14:25:03 Failed password for admin from 203.0.113.50<br/>
+                                            14:25:05 Failed password for admin from 203.0.113.50<br/>
+                                            14:25:07 Failed password for admin from 203.0.113.50<br/>
+                                            <span className="comment"># ... 50+ more attempts ...</span><br/>
+                                            14:27:43 <span className="string">Accepted password for admin from 203.0.113.50</span> <span className="comment">← SUCCESS!</span>
+                                        </div>
+                                        <div className="mt-3 p-3 bg-red-50 rounded">
+                                            <p className="text-sm text-red-800">
+                                                <strong>Detection:</strong> Count failed logins per IP. Alert on threshold (e.g., 5 failures in 5 minutes)
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-bold text-lg mb-3 text-red-600">2. Port Scanning</h4>
+                                        <p className="text-gray-700 mb-3">
+                                            Sequential connection attempts to multiple ports from single source.
+                                        </p>
+                                        <div className="code-block text-xs">
+                                            DROP: SRC=203.0.113.100 DST=192.168.1.10 DPT=<span className="string">20</span><br/>
+                                            DROP: SRC=203.0.113.100 DST=192.168.1.10 DPT=<span className="string">21</span><br/>
+                                            DROP: SRC=203.0.113.100 DST=192.168.1.10 DPT=<span className="string">22</span><br/>
+                                            DROP: SRC=203.0.113.100 DST=192.168.1.10 DPT=<span className="string">23</span><br/>
+                                            <span className="comment"># ... scanning ports 1-65535 ...</span>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-bold text-lg mb-3 text-red-600">3. SQL Injection Attempts</h4>
+                                        <div className="code-block text-xs">
+                                            GET /search.php?<span className="string">q=' OR '1'='1</span> HTTP/1.1<br/>
+                                            GET /login.php?<span className="string">user=admin' --</span> HTTP/1.1<br/>
+                                            POST /products.php <span className="string">id=1 UNION SELECT username,password FROM users</span>
+                                        </div>
+                                        <div className="mt-3 p-3 bg-red-50 rounded">
+                                            <p className="text-sm text-red-800">
+                                                <strong>Look for:</strong> SQL keywords (SELECT, UNION, DROP), quotes, comment syntax (--, #)
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-bold text-lg mb-3 text-red-600">4. Command Injection</h4>
+                                        <div className="code-block text-xs">
+                                            GET /ping.php?<span className="string">host=8.8.8.8; cat /etc/passwd</span><br/>
+                                            GET /backup.php?<span className="string">file=log.txt && rm -rf /</span><br/>
+                                            POST /upload.php <span className="string">filename=$(whoami)</span>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-bold text-lg mb-3 text-red-600">5. Suspicious File Access</h4>
+                                        <div className="code-block text-xs">
+                                            <span className="comment"># Path traversal attempts</span><br/>
+                                            GET /<span className="string">../../../../etc/passwd</span> HTTP/1.1<br/>
+                                            GET /<span className="string">..%2F..%2F..%2Fetc%2Fpasswd</span> HTTP/1.1<br/><br/>
+                                            <span className="comment"># Access to sensitive files</span><br/>
+                                            GET /<span className="string">.git/config</span> HTTP/1.1<br/>
+                                            GET /<span className="string">.env</span> HTTP/1.1<br/>
+                                            GET /<span className="string">backup.sql</span> HTTP/1.1
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-bold text-lg mb-3 text-red-600">6. Data Exfiltration</h4>
+                                        <div className="code-block text-xs">
+                                            <span className="comment"># Large outbound data transfer</span><br/>
+                                            14:30:05 User: john_doe Action: <span className="string">Downloaded 2.5GB</span> File: customer_database.zip<br/>
+                                            14:30:15 Connection: 192.168.1.50 → <span className="string">unknown-server.com:443</span> <span className="comment">Size: 2.5GB</span><br/><br/>
+                                            <span className="comment"># Especially suspicious if:</span><br/>
+                                            <span className="comment"># - Outside business hours</span><br/>
+                                            <span className="comment"># - To external/unknown IP</span><br/>
+                                            <span className="comment"># - User doesn't normally transfer large files</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-xl shadow-lg">
+                                <h3 className="text-2xl font-bold mb-4">🔧 Log Analysis Tools & Commands</h3>
+                                
+                                <div className="space-y-4">
+                                    <div>
+                                        <h4 className="font-bold text-lg mb-2">Basic Linux Commands</h4>
+                                        <div className="code-block">
+                                            <span className="comment"># View log files</span><br/>
+                                            <span className="command">tail</span> -f /var/log/auth.log  <span className="comment"># Follow in real-time</span><br/>
+                                            <span className="command">cat</span> /var/log/syslog | less  <span className="comment"># View with pagination</span><br/><br/>
+                                            <span className="comment"># Search for patterns</span><br/>
+                                            <span className="command">grep</span> <span className="string">"Failed password"</span> /var/log/auth.log<br/>
+                                            <span className="command">grep</span> -i <span className="string">"error"</span> /var/log/apache2/error.log<br/><br/>
+                                            <span className="comment"># Count occurrences</span><br/>
+                                            <span className="command">grep</span> <span className="string">"Failed password"</span> auth.log | <span className="command">wc</span> -l<br/><br/>
+                                            <span className="comment"># Find unique IPs with failed logins</span><br/>
+                                            <span className="command">grep</span> <span className="string">"Failed password"</span> auth.log | <span className="command">awk</span> {'{print $11}'} | <span className="command">sort</span> | <span className="command">uniq</span> -c | <span className="command">sort</span> -nr<br/><br/>
+                                            <span className="comment"># Show top offenders</span><br/>
+                                            <span className="command">grep</span> <span className="string">"Failed password"</span> auth.log | <span className="command">awk</span> {'{print $11}'} | <span className="command">sort</span> | <span className="command">uniq</span> -c | <span className="command">sort</span> -nr | <span className="command">head</span> -10
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-bold text-lg mb-2">Advanced Analysis with ELK Stack</h4>
+                                        <p className="text-sm text-gray-700 mb-3">
+                                            Elasticsearch, Logstash, Kibana - Industry standard for centralized logging
+                                        </p>
+                                        <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+                                            <li><strong>Elasticsearch:</strong> Stores and indexes logs</li>
+                                            <li><strong>Logstash:</strong> Collects, parses, and enriches logs</li>
+                                            <li><strong>Kibana:</strong> Visualizes data with dashboards</li>
+                                        </ul>
+                                    </div>
+
+                                    <div>
+                                        <h4 className="font-bold text-lg mb-2">SIEM Platforms</h4>
+                                        <div className="grid md:grid-cols-2 gap-3 text-sm">
+                                            <div className="p-3 bg-blue-50 rounded">
+                                                <strong>Splunk:</strong> Powerful search and correlation engine
+                                            </div>
+                                            <div className="p-3 bg-green-50 rounded">
+                                                <strong>IBM QRadar:</strong> Enterprise SIEM with threat intelligence
+                                            </div>
+                                            <div className="p-3 bg-purple-50 rounded">
+                                                <strong>AlienVault OSSIM:</strong> Open-source SIEM
+                                            </div>
+                                            <div className="p-3 bg-orange-50 rounded">
+                                                <strong>Wazuh:</strong> Free, open-source security monitoring
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-gradient-to-r from-blue-500 to-cyan-600 p-6 rounded-xl text-white">
+                                <h3 className="text-2xl font-bold mb-4">📊 Log Analysis Best Practices</h3>
+                                <div className="grid md:grid-cols-2 gap-4 text-sm opacity-90">
+                                    <ul className="space-y-2">
+                                        <li>✓ Centralize logs from all sources</li>
+                                        <li>✓ Implement log retention policies</li>
+                                        <li>✓ Synchronize time across systems (NTP)</li>
+                                        <li>✓ Use structured logging (JSON)</li>
+                                        <li>✓ Establish baselines for normal behavior</li>
+                                    </ul>
+                                    <ul className="space-y-2">
+                                        <li>✓ Create automated alerts for anomalies</li>
+                                        <li>✓ Regularly review and tune alerts</li>
+                                        <li>✓ Protect log integrity (immutable storage)</li>
+                                        <li>✓ Implement log forwarding redundancy</li>
+                                        <li>✓ Document investigation procedures</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div className="bg-yellow-50 border-l-4 border-yellow-500 p-6 rounded-lg">
+                                <h4 className="font-bold text-yellow-900 mb-2">🎯 Practice Lab Available</h4>
+                                <p className="text-yellow-800 mb-4">
+                                    Test your log analysis skills! Analyze real security logs, identify threats, 
+                                    and practice pattern recognition in our interactive Log Analysis Challenge.
+                                </p>
+                                <a href="log_analyzer.html" className="inline-block px-6 py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 font-semibold transition">
+                                    Launch Log Analysis Lab →
+                                </a>
+                            </div>
+                        </div>
+                    ),
+                    relatedLabs: ['log_analyzer', 'siem_dashboard'],
+                    resources: [
+                        { title: "Splunk Fundamentals", url: "https://www.splunk.com/en_us/training.html" },
+                        { title: "ELK Stack Guide", url: "https://www.elastic.co/guide/index.html" },
+                        { title: "SANS Log Management", url: "https://www.sans.org/white-papers/32987/" }
+                    ]
+                },
+
+                career: {
+                    title: "Cybersecurity Career Paths",
+                    subtitle: "Your Journey in Information Security",
+                    content: (
+                        <div className="space-y-6">
+                            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-xl border-l-4 border-indigo-500">
+                                <h3 className="text-2xl font-bold text-gray-900 mb-3">Building a Cybersecurity Career</h3>
+                                <p className="text-lg text-gray-700 leading-relaxed">
+                                    Cybersecurity offers diverse career paths with high demand and competitive salaries. 
+                                    Whether you're interested in defensive security, offensive security, or specialized roles, 
+                                    there's a path for you. This guide will help you navigate your options.
+                                </p>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-xl shadow-lg">
+                                <h3 className="text-2xl font-bold mb-6">🎯 Career Paths</h3>
+                                <div className="space-y-6">
+                                    <div className="border-l-4 border-blue-500 pl-6">
+                                        <h4 className="text-xl font-bold text-blue-900 mb-2">🛡️ Security Operations Center (SOC) Analyst</h4>
+                                        <p className="text-gray-700 mb-3">
+                                            Front-line defenders who monitor, detect, and respond to security incidents in real-time.
+                                        </p>
+                                        <div className="space-y-2 text-sm">
+                                            <div><strong>Responsibilities:</strong> Monitor SIEM alerts, investigate incidents, create detection rules, document findings</div>
+                                            <div><strong>Skills:</strong> Log analysis, threat detection, SIEM tools, incident response, networking basics</div>
+                                            <div><strong>Salary Range:</strong> $60,000 - $95,000 (entry to mid-level)</div>
+                                            <div><strong>Entry Point:</strong> Great first role in cybersecurity</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="border-l-4 border-red-500 pl-6">
+                                        <h4 className="text-xl font-bold text-red-900 mb-2">🔴 Penetration Tester (Ethical Hacker)</h4>
+                                        <p className="text-gray-700 mb-3">
+                                            Simulate real-world attacks to find vulnerabilities before malicious actors do.
+                                        </p>
+                                        <div className="space-y-2 text-sm">
+                                            <div><strong>Responsibilities:</strong> Conduct security assessments, exploit vulnerabilities, write detailed reports, recommend fixes</div>
+                                            <div><strong>Skills:</strong> Network/web exploitation, programming (Python, Bash), Kali Linux, social engineering</div>
+                                            <div><strong>Salary Range:</strong> $85,000 - $140,000+</div>
+                                            <div><strong>Certifications:</strong> OSCP, CEH, GPEN</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="border-l-4 border-green-500 pl-6">
+                                        <h4 className="text-xl font-bold text-green-900 mb-2">🔍 Security Analyst / Engineer</h4>
+                                        <p className="text-gray-700 mb-3">
+                                            Design, implement, and maintain security controls and infrastructure.
+                                        </p>
+                                        <div className="space-y-2 text-sm">
+                                            <div><strong>Responsibilities:</strong> Configure security tools, manage firewalls, implement security policies, vulnerability management</div>
+                                            <div><strong>Skills:</strong> Security architecture, firewall/IDS/IPS, cloud security, compliance frameworks</div>
+                                            <div><strong>Salary Range:</strong> $75,000 - $125,000</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="border-l-4 border-purple-500 pl-6">
+                                        <h4 className="text-xl font-bold text-purple-900 mb-2">🕵️ Incident Responder / Digital Forensics</h4>
+                                        <p className="text-gray-700 mb-3">
+                                            Investigate security breaches, analyze evidence, and help organizations recover.
+                                        </p>
+                                        <div className="space-y-2 text-sm">
+                                            <div><strong>Responsibilities:</strong> Investigate incidents, collect/analyze evidence, malware analysis, post-incident reports</div>
+                                            <div><strong>Skills:</strong> Forensics tools (Autopsy, Volatility), malware analysis, memory forensics, chain of custody</div>
+                                            <div><strong>Salary Range:</strong> $80,000 - $130,000</div>
+                                            <div><strong>Certifications:</strong> GCFE, GCFA, CHFI</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="border-l-4 border-orange-500 pl-6">
+                                        <h4 className="text-xl font-bold text-orange-900 mb-2">📋 Security Architect</h4>
+                                        <p className="text-gray-700 mb-3">
+                                            Design comprehensive security solutions and enterprise security strategies.
+                                        </p>
+                                        <div className="space-y-2 text-sm">
+                                            <div><strong>Responsibilities:</strong> Design security architecture, lead security projects, risk assessments, policy development</div>
+                                            <div><strong>Skills:</strong> Enterprise architecture, cloud security, zero trust, secure design patterns</div>
+                                            <div><strong>Salary Range:</strong> $130,000 - $200,000+</div>
+                                            <div><strong>Experience:</strong> Usually requires 5-10+ years</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="border-l-4 border-pink-500 pl-6">
+                                        <h4 className="text-xl font-bold text-pink-900 mb-2">🎯 Threat Intelligence Analyst</h4>
+                                        <p className="text-gray-700 mb-3">
+                                            Research threat actors, analyze attack patterns, and provide actionable intelligence.
+                                        </p>
+                                        <div className="space-y-2 text-sm">
+                                            <div><strong>Responsibilities:</strong> Analyze threat data, track threat actors, create intelligence reports, threat hunting</div>
+                                            <div><strong>Skills:</strong> OSINT, malware analysis, threat modeling, MITRE ATT&CK framework</div>
+                                            <div><strong>Salary Range:</strong> $90,000 - $140,000</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-xl shadow-lg">
+                                <h3 className="text-2xl font-bold mb-6">🎓 Essential Certifications</h3>
+                                <div className="space-y-4">
+                                    <div className="grid md:grid-cols-3 gap-4">
+                                        <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                                            <h4 className="font-bold text-green-900 mb-1">Entry Level</h4>
+                                            <ul className="text-sm space-y-1 text-gray-700">
+                                                <li>• CompTIA Security+</li>
+                                                <li>• CompTIA Network+</li>
+                                                <li>• (ISC)² CC</li>
+                                                <li>• Google Cybersecurity</li>
+                                            </ul>
+                                        </div>
+                                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                            <h4 className="font-bold text-blue-900 mb-1">Intermediate</h4>
+                                            <ul className="text-sm space-y-1 text-gray-700">
+                                                <li>• CEH (Certified Ethical Hacker)</li>
+                                                <li>• GIAC Security Essentials (GSEC)</li>
+                                                <li>• (ISC)² SSCP</li>
+                                                <li>• CompTIA CySA+</li>
+                                            </ul>
+                                        </div>
+                                        <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                                            <h4 className="font-bold text-purple-900 mb-1">Advanced</h4>
+                                            <ul className="text-sm space-y-1 text-gray-700">
+                                                <li>• OSCP (Offensive Security)</li>
+                                                <li>• CISSP (ISC)²</li>
+                                                <li>• GIAC Penetration Tester (GPEN)</li>
+                                                <li>• GCIH (Incident Handler)</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                        <p className="text-sm text-yellow-800">
+                                            <strong>💡 Tip:</strong> Start with Security+ or CC for foundational knowledge. 
+                                            Certifications help but hands-on experience and demonstrable skills are equally important!
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white p-6 rounded-xl shadow-lg">
+                                <h3 className="text-2xl font-bold mb-6">📚 Learning Path Recommendations</h3>
+                                
+                                <div className="space-y-6">
+                                    <div className="border-l-4 border-indigo-500 pl-4">
+                                        <h4 className="font-bold text-lg mb-3">Complete Beginner → SOC Analyst</h4>
+                                        <ol className="space-y-2 text-sm text-gray-700">
+                                            <li><strong>1. Foundation (2-4 months):</strong>
+                                                <ul className="ml-6 mt-1 space-y-1 list-disc">
+                                                    <li>Learn networking basics (TCP/IP, OSI model, protocols)</li>
+                                                    <li>Understand Linux and Windows administration</li>
+                                                    <li>Study CompTIA Security+ material</li>
+                                                </ul>
+                                            </li>
+                                            <li><strong>2. Security Fundamentals (3-6 months):</strong>
+                                                <ul className="ml-6 mt-1 space-y-1 list-disc">
+                                                    <li>Learn SIEM tools (Splunk, ELK)</li>
+                                                    <li>Practice log analysis daily</li>
+                                                    <li>Understand incident response procedures</li>
+                                                    <li>Get Security+ certification</li>
+                                                </ul>
+                                            </li>
+                                            <li><strong>3. Hands-On Practice (Ongoing):</strong>
+                                                <ul className="ml-6 mt-1 space-y-1 list-disc">
+                                                    <li>Use platforms like TryHackMe, HackTheBox</li>
+                                                    <li>Build home lab with VMs</li>
+                                                    <li>Participate in CTF competitions</li>
+                                                    <li>Create portfolio projects on GitHub</li>
+                                                </ul>
+                                            </li>
+                                        </ol>
+                                    </div>
+
+                                    <div className="border-l-4 border-red-500 pl-4">
+                                        <h4 className="font-bold text-lg mb-3">SOC Analyst → Penetration Tester</h4>
+                                        <ol className="space-y-2 text-sm text-gray-700">
+                                            <li><strong>1. Offensive Mindset (3-6 months):</strong>
+                                                <ul className="ml-6 mt-1 space-y-1 list-disc">
+                                                    <li>Learn penetration testing methodology</li>
+                                                    <li>Master Kali Linux tools</li>
+                                                    <li>Study web application security (OWASP Top 10)</li>
+                                                    <li>Learn programming (Python, Bash)</li>
+                                                </ul>
+                                            </li>
+                                            <li><strong>2. Practical Skills (6-12 months):</strong>
+                                                <ul className="ml-6 mt-1 space-y-1 list-disc">
+                                                    <li>Complete HackTheBox machines</li>
+                                                    <li>Practice on VulnHub VMs</li>
+                                                    <li>Learn exploit development basics</li>
+                                                    <li>Get CEH or eJPT certification</li>
+                                                </ul>
+                                            </li>
+                                            <li><strong>3. Professional Level (12+ months):</strong>
+                                                <ul className="ml-6 mt-1 space-y-1 list-disc">
+                                                    <li>Pursue OSCP certification</li>
+                                                    <li>Build public portfolio (writeups, tools)</li>
+                                                    <li>Participate in bug bounty programs</li>
+                                                    <li>Contribute to security community</li>
+                                                </ul>
+                                            </li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-6 rounded-xl text-white">
+                                <h3 className="text-2xl font-bold mb-4">💡 Success Tips</h3>
+                                <div className="grid md:grid-cols-2 gap-4 text-sm opacity-90">
+                                    <ul className="space-y-2">
+                                        <li>✓ <strong>Never stop learning</strong> - Technology evolves constantly</li>
+                                        <li>✓ <strong>Build in public</strong> - Share writeups, tools, blog posts</li>
+                                        <li>✓ <strong>Network actively</strong> - Join security communities, attend conferences</li>
+                                        <li>✓ <strong>Practice daily</strong> - Consistency beats intensity</li>
+                                    </ul>
+                                    <ul className="space-y-2">
+                                        <li>✓ <strong>Get hands-on</strong> - Labs and projects > theory alone</li>
+                                        <li>✓ <strong>Stay curious</strong> - Always ask "how does this work?"</li>
+                                        <li>✓ <strong>Develop soft skills</strong> - Communication is crucial</li>
+                                        <li>✓ <strong>Find a mentor</strong> - Learn from experienced professionals</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="bg-white p-6 rounded-xl shadow-lg">
+                                    <h4 className="text-xl font-bold mb-4">🌐 Free Learning Resources</h4>
+                                    <ul className="space-y-2 text-sm">
+                                        <li>• <a href="https://tryhackme.com" className="text-blue-600 hover:underline">TryHackMe</a> - Guided learning paths</li>
+                                        <li>• <a href="https://www.hackthebox.com" className="text-blue-600 hover:underline">HackTheBox</a> - Practical labs</li>
+                                        <li>• <a href="https://www.cybrary.it" className="text-blue-600 hover:underline">Cybrary</a> - Free courses</li>
+                                        <li>• <a href="https://portswigger.net/web-security" className="text-blue-600 hover:underline">PortSwigger Academy</a> - Web security</li>
+                                        <li>• <a href="https://www.offensive-security.com/metasploit-unleashed/" className="text-blue-600 hover:underline">Metasploit Unleashed</a> - Free Metasploit course</li>
+                                        <li>• YouTube channels (NetworkChuck, John Hammond, IppSec)</li>
+                                    </ul>
+                                </div>
+
+                                <div className="bg-white p-6 rounded-xl shadow-lg">
+                                    <h4 className="text-xl font-bold mb-4">👥 Communities to Join</h4>
+                                    <ul className="space-y-2 text-sm">
+                                        <li>• Reddit: r/cybersecurity, r/AskNetsec</li>
+                                        <li>• Discord: TryHackMe, HackTheBox, InfoSec servers</li>
+                                        <li>• Twitter: Follow #infosec, #cybersecurity</li>
+                                        <li>• Local DEFCON/OWASP chapters</li>
+                                        <li>• BSides conferences (local security events)</li>
+                                        <li>• LinkedIn cybersecurity groups</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    ),
+                    relatedLabs: [],
+                    resources: [
+                        { title: "Cybersecurity Career Roadmap", url: "https://pauljerimy.com/security-certification-roadmap/" },
+                        { title: "NIST NICE Framework", url: "https://www.nist.gov/itl/applied-cybersecurity/nice/nice-framework-resource-center" },
+                        { title: "CyberSeek Career Pathway", url: "https://www.cyberseek.org/pathway.html" }
+                    ]
                 }
             };
 
-            const currentTopic = topicContent[selectedTopic];
+            // Get current topic content
+            const currentCategory = categories.find(cat => cat.id === selectedCategory);
+            const currentTopicData = currentCategory?.topics.find(t => t.id === selectedTopic);
+            const content = topicContent[selectedTopic];
 
-            return React.createElement('div', { className: 'min-h-screen bg-gradient-to-br from-gray-50 to-blue-50' },
-                // Navigation
-                React.createElement('nav', { className: 'bg-white shadow-sm' },
-                    React.createElement('div', { className: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8' },
-                        React.createElement('div', { className: 'flex justify-between items-center h-16' },
-                            React.createElement('a', { 
-                                href: 'index_new.html',
-                                className: 'text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent'
-                            }, 'IR Simulator'),
-                            React.createElement('a', {
-                                href: 'simulator.html',
-                                className: 'px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg hover:from-purple-600 hover:to-pink-700 transition'
-                            }, 'Launch Simulator')
-                        )
-                    )
-                ),
+            if (!content) return null;
 
-                // Main Content
-                React.createElement('div', { className: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8' },
-                    React.createElement('div', { className: 'text-center mb-12' },
-                        React.createElement('h1', { className: 'text-4xl font-bold text-gray-900 mb-4' },
-                            'Learning Center'
-                        ),
-                        React.createElement('p', { className: 'text-xl text-gray-600' },
-                            'Master cybersecurity concepts before starting simulations'
-                        )
-                    ),
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+                    {/* Navigation */}
+                    <nav className="bg-white shadow-sm sticky top-0 z-50">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex justify-between items-center h-16">
+                                <div className="flex items-center space-x-4">
+                                    <a href="index.html" className="text-2xl font-bold gradient-text">
+                                        Cybersecurity Learning Platform
+                                    </a>
+                                </div>
+                                <div className="flex space-x-3">
+                                    <a href="simulator.html" className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg hover:from-purple-600 hover:to-pink-700 transition font-semibold">
+                                        Training Center →
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
 
-                    React.createElement('div', { className: 'grid md:grid-cols-4 gap-6' },
-                        // Sidebar
-                        React.createElement('div', { className: 'md:col-span-1' },
-                            React.createElement('div', { className: 'bg-white rounded-xl shadow-lg p-4 sticky top-4' },
-                                React.createElement('h3', { className: 'font-semibold text-gray-900 mb-4' }, 'Topics'),
-                                React.createElement('div', { className: 'space-y-2' },
-                                    topics.map(topic =>
-                                        React.createElement('button', {
-                                            key: topic.id,
-                                            onClick: () => setSelectedTopic(topic.id),
-                                            className: `w-full text-left px-4 py-3 rounded-lg transition ${
-                                                selectedTopic === topic.id 
-                                                    ? 'bg-gradient-to-r from-purple-500 to-pink-600 text-white' 
-                                                    : 'hover:bg-gray-100'
-                                            }`
-                                        },
-                                            React.createElement('span', { className: 'mr-2' }, topic.icon),
-                                            topic.title
-                                        )
-                                    )
-                                )
-                            )
-                        ),
+                    {/* Main Content */}
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        {/* Header */}
+                        <div className="text-center mb-12">
+                            <h1 className="text-5xl font-bold text-gray-900 mb-4">
+                                Learning Center
+                            </h1>
+                            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                                Comprehensive cybersecurity education - from fundamentals to advanced topics. 
+                                Learn theory, then practice in our interactive labs.
+                            </p>
+                        </div>
 
-                        // Content Area
-                        React.createElement('div', { className: 'md:col-span-3' },
-                            React.createElement('div', { className: 'bg-white rounded-xl shadow-lg p-8 mb-6' },
-                                currentTopic.content
-                            ),
+                        {/* Category Tabs */}
+                        <div className="bg-white rounded-xl shadow-lg p-2 mb-8">
+                            <div className="flex flex-wrap gap-2">
+                                {categories.map(category => (
+                                    <button
+                                        key={category.id}
+                                        onClick={() => {
+                                            setSelectedCategory(category.id);
+                                            setSelectedTopic(category.topics[0].id);
+                                        }}
+                                        className={`flex items-center px-6 py-3 rounded-lg font-semibold transition ${
+                                            selectedCategory === category.id
+                                                ? `bg-gradient-to-r ${category.color} text-white`
+                                                : 'hover:bg-gray-100 text-gray-700'
+                                        }`}
+                                    >
+                                        <span className="text-2xl mr-2">{category.icon}</span>
+                                        {category.title}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
 
-                            // Resources
-                            currentTopic.resources.length > 0 && React.createElement('div', { className: 'bg-white rounded-xl shadow-lg p-6' },
-                                React.createElement('h4', { className: 'text-lg font-semibold mb-4' }, 'Additional Resources'),
-                                React.createElement('div', { className: 'space-y-2' },
-                                    currentTopic.resources.map((resource, idx) =>
-                                        React.createElement('a', {
-                                            key: idx,
-                                            href: resource.url,
-                                            target: '_blank',
-                                            rel: 'noopener noreferrer',
-                                            className: 'block p-3 border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition'
-                                        },
-                                            React.createElement('span', { className: 'text-purple-600 hover:underline' }, 
-                                                '→ ', resource.title
-                                            )
-                                        )
-                                    )
-                                )
-                            )
-                        )
-                    )
-                )
+                        {/* Content Grid */}
+                        <div className="grid lg:grid-cols-4 gap-6">
+                            {/* Sidebar - Topic List */}
+                            <div className="lg:col-span-1">
+                                <div className="bg-white rounded-xl shadow-lg p-4 sticky top-24">
+                                    <h3 className="font-bold text-gray-900 mb-4 text-lg">
+                                        {currentCategory?.title} Topics
+                                    </h3>
+                                    <div className="space-y-2">
+                                        {currentCategory?.topics.map(topic => (
+                                            <button
+                                                key={topic.id}
+                                                onClick={() => setSelectedTopic(topic.id)}
+                                                className={`w-full text-left px-4 py-3 rounded-lg transition flex items-center ${
+                                                    selectedTopic === topic.id
+                                                        ? `bg-gradient-to-r ${currentCategory.color} text-white`
+                                                        : 'hover:bg-gray-50 text-gray-700'
+                                                }`}
+                                            >
+                                                <span className="text-xl mr-3">{topic.icon}</span>
+                                                <span className="text-sm font-medium">{topic.title}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Main Content Area */}
+                            <div className="lg:col-span-3 space-y-6">
+                                {/* Content Card */}
+                                <div className="bg-white rounded-xl shadow-lg p-8">
+                                    <div className="mb-6">
+                                        <h2 className="text-4xl font-bold text-gray-900 mb-2">
+                                            {content.title}
+                                        </h2>
+                                        <p className="text-lg text-gray-600">{content.subtitle}</p>
+                                    </div>
+                                    {content.content}
+                                </div>
+
+                                {/* Related Labs */}
+                                {content.relatedLabs && content.relatedLabs.length > 0 && (
+                                    <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">
+                                        <h3 className="text-2xl font-bold mb-4">🎯 Practice What You Learned</h3>
+                                        <p className="mb-4 opacity-90">
+                                            Reinforce your knowledge with hands-on practice in our interactive labs.
+                                        </p>
+                                        <div className="flex flex-wrap gap-3">
+                                            {content.relatedLabs.map((lab, idx) => {
+                                                const labNames = {
+                                                    'simulation_dashboard': 'Live Simulation',
+                                                    'quiz': 'Knowledge Quiz',
+                                                    'log_analyzer': 'Log Analysis Challenge',
+                                                    'privilege_escalation': 'Privilege Escalation Lab',
+                                                    'password_cracking': 'Password Cracking Lab',
+                                                    'siem_dashboard': 'SIEM Dashboard Demo'
+                                                };
+                                                return (
+                                                    <a
+                                                        key={idx}
+                                                        href={`${lab}.html`}
+                                                        className="px-6 py-3 bg-white text-indigo-600 rounded-lg font-semibold hover:bg-gray-100 transition"
+                                                    >
+                                                        {labNames[lab] || lab} →
+                                                    </a>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* External Resources */}
+                                {content.resources && content.resources.length > 0 && (
+                                    <div className="bg-white rounded-xl shadow-lg p-6">
+                                        <h3 className="text-xl font-bold text-gray-900 mb-4">📚 Additional Resources</h3>
+                                        <div className="space-y-3">
+                                            {content.resources.map((resource, idx) => (
+                                                <a
+                                                    key={idx}
+                                                    href={resource.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="block p-4 border border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition group"
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-purple-600 group-hover:text-purple-700 font-medium">
+                                                            {resource.title}
+                                                        </span>
+                                                        <span className="text-gray-400 group-hover:text-purple-500">→</span>
+                                                    </div>
+                                                </a>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Footer */}
+                    <footer className="bg-gray-900 text-white mt-20 py-12">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="grid md:grid-cols-3 gap-8">
+                                <div>
+                                    <h4 className="text-lg font-bold mb-4">About This Platform</h4>
+                                    <p className="text-gray-400 text-sm">
+                                        A comprehensive cybersecurity training platform designed to help you learn 
+                                        and practice information security skills in a safe environment.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h4 className="text-lg font-bold mb-4">Quick Links</h4>
+                                    <ul className="space-y-2 text-sm">
+                                        <li><a href="simulator.html" className="text-gray-400 hover:text-white transition">Training Center</a></li>
+                                        <li><a href="system_demos.html" className="text-gray-400 hover:text-white transition">System Demos</a></li>
+                                        <li><a href="quiz.html" className="text-gray-400 hover:text-white transition">Knowledge Quiz</a></li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h4 className="text-lg font-bold mb-4">Legal</h4>
+                                    <p className="text-gray-400 text-sm">
+                                        ⚠️ For educational purposes only. Always obtain proper authorization before 
+                                        testing security systems. Unauthorized access is illegal.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400 text-sm">
+                                <p>© 2025 Cybersecurity Learning Platform. Built for education and skill development.</p>
+                            </div>
+                        </div>
+                    </footer>
+                </div>
             );
         };
 

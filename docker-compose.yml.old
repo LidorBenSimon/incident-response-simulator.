@@ -78,7 +78,7 @@ services:
       tail -f /dev/null
       "
 
-  # FIXED: Privilege Escalation Lab
+  # Privilege Escalation Lab - SIMPLIFIED
   privesc_lab:
     image: ubuntu:20.04
     container_name: privesc_lab
@@ -98,12 +98,11 @@ services:
     command:
       - -c
       - |
-        set +e
         apt-get update -qq
         apt-get install -y -qq sudo vim nano python3 gcc openssh-server make
         useradd -m -s /bin/bash lowpriv
         echo 'lowpriv:student123' | chpasswd
-        printf '#include <stdio.h>\n#include <stdlib.h>\n#include <unistd.h>\nint main(void) {\nsetuid(0);\nsetgid(0);\nprintf("===========================================\\n");\nprintf("ROOT ACCESS ACHIEVED!\\n");\nprintf("===========================================\\n");\nprintf("You are now: ");\nfflush(stdout);\nsystem("whoami");\nprintf("User ID: ");\nfflush(stdout);\nsystem("id");\nprintf("\\nReading /root/flag.txt:\\n");\nfflush(stdout);\nsystem("cat /root/flag.txt");\nprintf("\\n===========================================\\n");\nreturn 0;\n}\n' > /tmp/root_shell.c
+        printf '#include <stdio.h>\n#include <stdlib.h>\n#include <unistd.h>\nint main(void) {\nsetuid(0);\nsetgid(0);\nsystem("/bin/bash");\nreturn 0;\n}\n' > /tmp/root_shell.c
         gcc -o /usr/local/bin/backup /tmp/root_shell.c
         chown root:root /usr/local/bin/backup
         chmod 4755 /usr/local/bin/backup
@@ -118,13 +117,10 @@ services:
         echo '========================='
         echo 'Privesc Lab READY'
         ls -la /usr/local/bin/backup
-        file /usr/local/bin/backup
-        echo 'Flag:'
-        ls -la /root/flag.txt
         echo '========================='
         tail -f /dev/null
 
-  # FIXED: Password Cracking Lab
+  # Password Cracking Lab - SIMPLIFIED
   hashcrack_lab:
     image: ubuntu:22.04
     container_name: hashcrack_lab
@@ -139,7 +135,6 @@ services:
     command:
       - -c
       - |
-        set +e
         apt-get update -qq
         apt-get install -y -qq hashcat john curl wget git python3 openssh-server
         useradd -m -s /bin/bash pentester
@@ -147,10 +142,9 @@ services:
         mkdir -p /hashes /wordlists /results
         printf 'password\n123456\nadmin\nletmein\nqwerty\n12345678\npass123\nPassword123\n' > /wordlists/rockyou.txt
         cp /wordlists/rockyou.txt /wordlists/common-1k.txt
-        printf '5f4dcc3b5aa765d61d8327deb882cf99\ne10adc3949ba59abbe56e057f20f883e\n25d55ad283aa400af464c76d713c07ad\nfcea920f7412b5da7be0cf42b8c93759\n1a1dc91c907325c69271ddf0c944bc72\n' > /hashes/company_dump_md5.txt
-        printf '5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8\n8cb2237d0679ca88db6464eac60da96345513964\n' > /hashes/company_dump_sha1.txt
-        printf '209c6174da490caeb422f3fa5a7ae634\n32ed87bdb5fdc5e9cba88547376818d4\n' > /hashes/company_dump_ntlm.txt
-        printf 'HASHCAT: hashcat -m 0 /hashes/company_dump_md5.txt /wordlists/rockyou.txt --force\nhashcat -m 0 /hashes/company_dump_md5.txt --show\n' > /hashes/README.txt
+        printf '5f4dcc3b5aa765d61d8327deb882cf99:admin\ne10adc3949ba59abbe56e057f20f883e:john_doe\n25d55ad283aa400af464c76d713c07ad:alice_smith\n' > /hashes/company_dump_md5.txt
+        printf '5baa61e4c9b93f3f0682250b6cf8331b7ee68fd8:admin\n8cb2237d0679ca88db6464eac60da96345513964:manager\n' > /hashes/company_dump_sha1.txt
+        printf 'JOHN: john --format=raw-md5 --wordlist=/wordlists/rockyou.txt /hashes/company_dump_md5.txt\njohn --format=raw-md5 --show /hashes/company_dump_md5.txt\n' > /hashes/README.txt
         chown -R pentester:pentester /hashes /wordlists /results
         service ssh start
         echo '========================='
