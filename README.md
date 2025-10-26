@@ -845,9 +845,9 @@ docker-compose logs <service_name>
 ---
 
 ## Authors
-### Lidor Ben Simon – Software Engineering Student
+Lidor Ben Simon – Software Engineering Student
 
-### Rotem Swisa – Software Engineering Student
+Rotem Swisa – Software Engineering Student
 
 🔗 Link to my LinkedIn profile www.linkedin.com/in/לידור-בן-סימון-281576384/
 
