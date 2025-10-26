@@ -841,3 +841,11 @@ docker-compose logs <service_name>
 ## Short GitHub description (for "About" / repo short description)
 
 **Incident Response Simulator — hands-on cybersecurity training platform with password‑cracking, privilege‑escalation and phishing exercises, designed for safe learning and teaching.**
+
+Authors
+Lidor Ben Simon – Software Engineering Student
+Rotem Swisa – Software Engineering Student
+🔗 Link to my LinkedIn profile www.linkedin.com/in/לידור-בן-סימון-281576384/
+🔗 Link to the team member's LinkedIn profile www.linkedin.com/in/rotem-swisa-10b675382
+
+🔗 Feel free to visit his GitHub to check out his projects too https://github.com/RotemSwisa
